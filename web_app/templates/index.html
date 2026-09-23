@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Language AI — Gesture to Sentence</title>
+  <meta name="description" content="AI-powered sign language gesture detection that converts both-hand signs into natural English sentences in real time."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Reset & Tokens ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:   #050a18;
+      --bg-card:   rgba(12, 22, 48, 0.72);
+      --bg-card2:  rgba(15, 28, 60, 0.80);
+      --border:    rgba(100, 160, 255, 0.18);
+      --border-hi: rgba(100, 200, 255, 0.40);
+      --accent1:   #38bdf8;
+      --accent2:   #818cf8;
+      --accent3:   #34d399;
+      --accent4:   #fb923c;
+      --danger:    #f87171;
+      --text-hi:   #f0f9ff;
+      --text-mid:  #94a3b8;
+      --text-low:  #475569;
+      --glow1: 0 0 40px rgba(56,189,248,.25);
+      --glow2: 0 0 40px rgba(129,140,248,.25);
+      --radius:    16px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-hi);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 20%,  rgba(56,189,248,.08)  0%, transparent 60%),
+        radial-gradient(ellipse 60% 70% at 90% 80%,  rgba(129,140,248,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 50% 50%,  rgba(52,211,153,.04)  0%, transparent 70%),
+        linear-gradient(160deg, #030711 0%, #060e22 50%, #030711 100%);
+      animation: bgShift 20s ease-in-out infinite alternate;
+    }
+    @keyframes bgShift {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.85; }
+      100% { opacity: 1; }
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .app-shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+      gap: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(5,10,24,.60);
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--glow1);
+    }
+    .logo-text { font-size: 1.25rem; font-weight: 800; letter-spacing: -.4px; }
+    .logo-text span { color: var(--accent1); }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(52,211,153,.1);
+      border: 1px solid rgba(52,211,153,.25);
+      font-size: .75rem; font-weight: 600; color: var(--accent3);
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent3);
+      animation: pulse-dot 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(.7); }
+    }
+
+    /* ── Main grid ──────────────────────────────────────── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      grid-template-rows: auto auto;
+      gap: 20px;
+      padding: 24px 32px;
+      align-items: start;
+    }
+
+    /* ── Card base ──────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(18px);
+      transition: border-color .3s;
+    }
+    .card:hover { border-color: var(--border-hi); }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-mid);
+    }
+    .card-title-icon { font-size: 1rem; }
+    .card-body { padding: 20px; }
+
+    /* ── Camera card ────────────────────────────────────── */
+    .cam-card {
+      grid-row: 1 / 3;
+      display: flex; flex-direction: column;
+    }
+    .cam-wrapper {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+    }
+    .cam-wrapper img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Gesture badge */
+    .gesture-badge {
+      position: absolute; bottom: 16px; left: 16px;
+      background: rgba(0,0,0,.72);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: var(--radius-xs);
+      padding: 8px 18px;
+      backdrop-filter: blur(10px);
+    }
+    .gesture-label {
+      font-size: 1.6rem; font-weight: 800; letter-spacing: .02em;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(90deg, var(--accent1), var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: all .3s;
+    }
+    .gesture-meta {
+      font-size: .7rem; color: var(--text-mid); margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Hands indicator badge */
+    .hands-badge {
+      position: absolute; top: 12px; right: 12px;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,.65); border-radius: 999px;
+      padding: 5px 12px; font-size: .72rem; font-weight: 600;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+    .hand-icon { font-size: .9rem; transition: filter .3s; }
+    .hand-icon.active { filter: drop-shadow(0 0 6px var(--accent3)); }
+
+    /* Confidence bar inside camera */
+    .conf-bar-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 4px; background: rgba(255,255,255,.08);
+    }
+    .conf-bar-fill {
+      height: 100%; border-radius: 0 2px 0 0;
+      background: linear-gradient(90deg, var(--accent3), var(--accent1));
+      transition: width .25s ease;
+      box-shadow: 0 0 8px var(--accent1);
+    }
+
+    /* Stable progress */
+    .stable-stripe {
+      position: absolute; bottom: 4px; left: 0;
+      height: 3px; background: var(--accent3);
+      border-radius: 0 2px 0 0;
+      width: 0%; transition: width .1s linear;
+      box-shadow: 0 0 6px var(--accent3);
+    }
+
+    /* ── Sign sentence panel ────────────────────────────── */
+    .sentence-panel {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* Word chips row */
+    .chips-wrap {
+      min-height: 56px;
+      display: flex; flex-wrap: wrap; gap: 8px;
+      align-items: center;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(56,189,248,.12);
+      border: 1px solid rgba(56,189,248,.30);
+      font-size: .82rem; font-weight: 600;
+      color: var(--accent1);
+      font-family: 'JetBrains Mono', monospace;
+      animation: chipIn .25s cubic-bezier(.175,.885,.32,1.275) both;
+    }
+    @keyframes chipIn {
+      from { transform: scale(0.6) translateY(6px); opacity: 0; }
+      to   { transform: scale(1)   translateY(0px); opacity: 1; }
+    }
+    .chip-idx { font-size: .65rem; opacity: .5; }
+    .chips-placeholder {
+      font-size: .82rem; color: var(--text-low); font-style: italic;
+    }
+
+    /* Raw sentence */
+    .raw-sentence {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .88rem; color: var(--text-mid);
+      min-height: 28px; line-height: 1.6;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.04);
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border);
+      word-break: break-word;
+    }
+    .raw-label { font-size: .7rem; color: var(--text-low); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+
+    /* AI corrected */
+    .ai-sentence {
+      font-size: 1rem; font-weight: 500; color: var(--text-hi);
+      min-height: 36px; line-height: 1.7;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(129,140,248,.10), rgba(56,189,248,.06));
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(129,140,248,.25);
+      word-break: break-word;
+      transition: all .4s;
+    }
+    .ai-sentence.correcting {
+      animation: aiPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes aiPulse {
+      0%,100% { border-color: rgba(129,140,248,.25); }
+      50%      { border-color: rgba(129,140,248,.70); box-shadow: 0 0 20px rgba(129,140,248,.2); }
+    }
+    .ai-label {
+      font-size: .7rem; color: var(--accent2);
+      margin-bottom: 6px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ai-badge {
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: .62rem; font-weight: 800;
+    }
+
+    /* Action buttons */
+    .btn-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: var(--radius-xs);
+      font-family: 'Inter', sans-serif;
+      font-size: .8rem; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: all .2s; white-space: nowrap;
+    }
+    .btn:active { transform: scale(.95); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(56,189,248,.30);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(56,189,248,.50); }
+
+    .btn-success {
+      background: rgba(52,211,153,.15);
+      border: 1px solid rgba(52,211,153,.35);
+      color: var(--accent3);
+    }
+    .btn-success:hover { background: rgba(52,211,153,.25); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.10); color: var(--text-hi); }
+
+    .btn-danger {
+      background: rgba(248,113,113,.12);
+      border: 1px solid rgba(248,113,113,.30);
+      color: var(--danger);
+    }
+    .btn-danger:hover { background: rgba(248,113,113,.22); }
+
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    /* ── Speech / Keywords ──────────────────────────────── */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .info-text {
+      font-size: .85rem; color: var(--text-hi); line-height: 1.6;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.04);
+      border-radius: var(--radius-xs);
+      min-height: 48px;
+    }
+    .kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+    .kw-tag {
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(251,146,60,.10);
+      border: 1px solid rgba(251,146,60,.25);
+      font-size: .73rem; font-weight: 600;
+      color: var(--accent4);
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      padding: 14px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(12px);
+      background: rgba(5,10,24,.60);
+    }
+    .kbd-hint {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      font-size: .72rem; color: var(--text-low);
+    }
+    .kbd-hint span { display: flex; align-items: center; gap: 5px; }
+    kbd {
+      background: rgba(255,255,255,.1);
+      border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem; color: var(--text-mid);
+    }
+    .footer-brand { font-size: .72rem; color: var(--text-low); }
+
+    /* ── Toast notification ─────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 80px; right: 24px; z-index: 999;
+      background: rgba(15,28,60,.95);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      padding: 12px 20px;
+      font-size: .82rem; color: var(--text-hi);
+      backdrop-filter: blur(16px);
+      transform: translateY(20px); opacity: 0;
+      transition: all .3s; pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,.40);
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Scrollbar ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; grid-template-rows: auto; }
+      .cam-card { grid-row: auto; }
+      header, footer { padding: 14px 20px; }
+      main { padding: 16px 20px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app-shell">
+
+  <!-- ══ HEADER ══════════════════════════════════════════ -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🤟</div>
+      <div class="logo-text">Sign<span>AI</span></div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="hands-status">Detecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN ════════════════════════════════════════════ -->
+  <main>
+
+    <!-- Camera card (left, tall) -->
+    <div class="card cam-card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-title-icon">📷</span> Live Camera
+        </div>
+        <div id="conf-label" style="font-size:.75rem; color:var(--text-mid); font-family:'JetBrains Mono',monospace;">— %</div>
+      </div>
+      <div class="card-body" style="flex:1; display:flex; flex-direction:column; gap:14px;">
+        <div class="cam-wrapper">
+          <img src="/video" id="cam-feed" alt="Live camera feed"/>
+
+          <!-- Hands badges -->
+          <div class="hands-badge">
+            <span class="hand-icon" id="hand-l" title="Left hand">🤚</span>
+            <span class="hand-icon" id="hand-r" title="Right hand">🤚</span>
+            <span id="hand-count-text" style="color:var(--text-mid)">0/2</span>
+          </div>
+
+          <!-- Gesture overlay badge -->
+          <div class="gesture-badge">
+            <div class="gesture-label" id="gesture-main">WAITING</div>
+            <div class="gesture-meta" id="gesture-meta">Hold gesture to build sentence</div>
+          </div>
+
+          <!-- Confidence bar -->
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-fill" id="conf-bar" style="width:0%"></div>
+          </div>
+
+          <!-- Stable progress stripe -->
+          <div class="stable-stripe" id="stable-stripe"></div>
+        </div>
+
+        <!-- Quick info: speech input -->
+        <div>
+          <div class="raw-label">🎤 Speech Input</div>
+          <div class="info-text" id="speech-text">Listening…</div>
+        </div>
+
+        <!-- Keywords -->
+        <div>
+          <div class="raw-label">🔑 Keywords</div>
+          <div class="kw-wrap" id="keywords-wrap">
+            <span style="color:var(--text-low); font-size:.8rem;">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sign sentence panel (right, top) ── -->
+    <div class="card sentence-panel" style="padding:0;">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-title-icon">✋</span> Sign Words
+        </div>
+        <div style="font-size:.72rem; color:var(--text-low);" id="word-count">0 words</div>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Chips -->
+        <div class="chips-wrap" id="chips-container">
+          <span class="chips-placeholder" id="chips-placeholder">Sign a gesture to begin…</span>
+        </div>
+
+        <!-- Raw sentence -->
+        <div>
+          <div class="raw-label">Raw Signs</div>
+          <div class="raw-sentence" id="raw-sentence">—</div>
+        </div>
+
+        <!-- AI corrected sentence -->
+        <div>
+          <div class="ai-label">
+            <span>✨ AI Corrected Sentence</span>
+            <span class="ai-badge">GEMINI</span>
+          </div>
+          <div class="ai-sentence" id="ai-sentence">Press <strong>Correct with AI</strong> to generate a natural sentence from your signs.</div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-correct" onclick="correctWithAI()">
+            ✨ Correct with AI
+          </button>
+          <button class="btn btn-success" id="btn-speak" onclick="speakSentence()">
+            🔊 Speak
+          </button>
+          <button class="btn btn-ghost" id="btn-backspace" onclick="backspace()">
+            ⌫ Undo
+          </button>
+          <button class="btn btn-danger" id="btn-clear" onclick="clearAll()">
+            🗑 Clear
+          </button>
+        </div>
+
+        <!-- Keyboard shortcuts reminder -->
+        <div style="font-size:.7rem; color:var(--text-low); display:flex; gap:12px; flex-wrap:wrap;">
+          <span><kbd>Enter</kbd> Correct AI</span>
+          <span><kbd>Space</kbd> Speak</span>
+          <span><kbd>⌫</kbd> Undo</span>
+          <span><kbd>C</kbd> Clear</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Summary panel (right, bottom) ── -->
+    <div class="card" style="padding:0;">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-title-icon">🧠</span> Speech Summary
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="info-text" id="summary-text">Summary will appear here…</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer>
+    <div class="kbd-hint">
+      <span><kbd>Enter</kbd> AI Correct</span>
+      <span><kbd>Space</kbd> Speak</span>
+      <span><kbd>Backspace</kbd> Undo</span>
+      <span><kbd>C</kbd> Clear</span>
+    </div>
+    <div class="footer-brand">SignAI · Both-Hand Gesture Detection</div>
+  </footer>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════ */
+let currentGesture    = 'WAITING';
+let currentWords      = [];
+let isCorrecting      = false;
+let prevWordCount     = 0;
+let toastTimer        = null;
+
+/* ════════════════════════════════════════════════════════
+   POLL GESTURE (200 ms)
+════════════════════════════════════════════════════════ */
+async function pollGesture() {
+  try {
+    const r = await fetch('/gesture');
+    const d = await r.json();
+    const g = d.gesture || 'WAITING';
+    const c = d.confidence || 0;
+    const h = d.hands || 0;
+
+    // Update gesture label
+    const el = document.getElementById('gesture-main');
+    if (g !== currentGesture) {
+      el.style.animation = 'none';
+      el.offsetHeight;    // reflow
+      el.style.animation = '';
+      el.textContent = g;
+      currentGesture = g;
+    }
+    document.getElementById('gesture-meta').textContent =
+      g === 'WAITING' ? 'Hold a gesture to build a sentence' :
+      g === 'Unknown' ? 'Low confidence — try again' :
+      `Detected (${c}% confidence)`;
+
+    // Confidence bar
+    document.getElementById('conf-bar').style.width = c + '%';
+    document.getElementById('conf-label').textContent = c.toFixed(0) + '%';
+
+    // Hands indicators
+    const handL = document.getElementById('hand-l');
+    const handR = document.getElementById('hand-r');
+    const hActive = 'hand-icon active';
+    if (h === 0) {
+      handL.className = 'hand-icon'; handR.className = 'hand-icon';
+    } else if (h === 1) {
+      handL.className = hActive; handR.className = 'hand-icon';
+    } else {
+      handL.className = hActive; handR.className = hActive;
+    }
+    document.getElementById('hand-count-text').textContent = `${h}/2`;
+    document.getElementById('hands-status').textContent =
+      h === 0 ? 'No hand detected' :
+      h === 1 ? '1 hand detected'  :
+                'Both hands detected';
+
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════════════
+   POLL SENTENCE (300 ms)
+════════════════════════════════════════════════════════ */
+async function pollSentence() {
+  try {
+    const r = await fetch('/sentence');
+    const d = await r.json();
+
+    currentWords  = d.words  || [];
+    const raw     = d.raw    || '';
+    const ai      = d.corrected || '';
+    isCorrecting  = d.is_correcting || false;
+
+    // Word count badge
+    document.getElementById('word-count').textContent =
+      currentWords.length === 0 ? '0 words' :
+      currentWords.length === 1 ? '1 word'  :
+      currentWords.length + ' words';
+
+    // Chips
+    renderChips(currentWords);
+
+    // Raw sentence
+    document.getElementById('raw-sentence').textContent = raw || '—';
+
+    // AI sentence
+    const aiEl = document.getElementById('ai-sentence');
+    if (isCorrecting) {
+      aiEl.textContent = '✨ Correcting with Gemini AI…';
+      aiEl.classList.add('correcting');
+    } else {
+      aiEl.classList.remove('correcting');
+      if (ai && ai !== 'Correcting…') {
+        aiEl.innerHTML = '<strong>' + escHtml(ai) + '</strong>';
+      } else if (!ai) {
+        aiEl.innerHTML = 'Press <strong>Correct with AI</strong> to generate a natural sentence.';
+      }
+    }
+
+    // Flash new word
+    if (currentWords.length > prevWordCount) {
+      showToast('✋ "' + currentWords[currentWords.length - 1] + '" added!');
+    }
+    prevWordCount = currentWords.length;
+
+    // Button states
+    const hasWords = currentWords.length > 0;
+    document.getElementById('btn-correct').disabled   = !hasWords || isCorrecting;
+    document.getElementById('btn-speak').disabled     = false;
+    document.getElementById('btn-backspace').disabled = !hasWords;
+    document.getElementById('btn-clear').disabled     = !hasWords;
+
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════════════
+   POLL SPEECH / SUMMARY / KEYWORDS (1s)
+════════════════════════════════════════════════════════ */
+async function pollExtras() {
+  try {
+    const [st, su, kw] = await Promise.all([
+      fetch('/teacher_text').then(r=>r.json()),
+      fetch('/summary').then(r=>r.json()),
+      fetch('/keywords').then(r=>r.json()),
+    ]);
+    document.getElementById('speech-text').textContent = st.text || '—';
+    document.getElementById('summary-text').textContent = su.summary || '—';
+
+    const kwWrap = document.getElementById('keywords-wrap');
+    if (kw.keywords && kw.keywords.length > 0) {
+      kwWrap.innerHTML = kw.keywords.map(
+        k => `<span class="kw-tag">${escHtml(k)}</span>`
+      ).join('');
+    }
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER CHIPS
+════════════════════════════════════════════════════════ */
+function renderChips(words) {
+  const container = document.getElementById('chips-container');
+  const placeholder = document.getElementById('chips-placeholder');
+
+  if (!words || words.length === 0) {
+    placeholder.style.display = 'inline';
+    // Remove all chips
+    [...container.querySelectorAll('.chip')].forEach(c => c.remove());
+    return;
+  }
+
+  placeholder.style.display = 'none';
+
+  // Sync chips: add missing, remove extra
+  const existing = [...container.querySelectorAll('.chip')];
+
+  // Remove extras
+  while (existing.length > words.length) {
+    existing.pop().remove();
+  }
+
+  // Update / add
+  words.forEach((word, idx) => {
+    if (idx < existing.length) {
+      // Update existing chip text if changed
+      existing[idx].querySelector('.chip-word').textContent = word;
+    } else {
+      // Create new chip
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = `<span class="chip-idx">${idx+1}.</span><span class="chip-word">${escHtml(word)}</span>`;
+      container.appendChild(chip);
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   ACTIONS
+════════════════════════════════════════════════════════ */
+async function correctWithAI() {
+  if (currentWords.length === 0) { showToast('⚠ No words in sentence yet.'); return; }
+  if (isCorrecting) return;
+  try {
+    const r = await fetch('/ai_correct', {method:'POST'});
+    const d = await r.json();
+    if (d.status === 'started') {
+      showToast('✨ Gemini is correcting your sentence…');
+    } else if (d.status === 'error') {
+      showToast('⚠ ' + (d.message || 'Error'));
+    }
+  } catch(e) { showToast('⚠ Network error'); }
+}
+
+async function speakSentence() {
+  try {
+    const r = await fetch('/speak_sentence', {method:'POST'});
+    const d = await r.json();
+    if (d.status === 'speaking')   showToast('🔊 Speaking: "' + d.text.substring(0,40) + (d.text.length>40?'…':'') + '"');
+    else if (d.status === 'empty') showToast('⚠ Nothing to speak yet.');
+  } catch(e) {}
+}
+
+async function backspace() {
+  try {
+    const r = await fetch('/backspace_sentence', {method:'POST'});
+    const d = await r.json();
+    showToast('⌫ Removed last word');
+  } catch(e) {}
+}
+
+async function clearAll() {
+  try {
+    await fetch('/clear_sentence', {method:'POST'});
+    prevWordCount = 0;
+    showToast('🗑 Sentence cleared');
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  // Don't trigger if typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key === 'Enter')      { e.preventDefault(); correctWithAI(); }
+  if (e.key === ' ')          { e.preventDefault(); speakSentence(); }
+  if (e.key === 'Backspace')  { e.preventDefault(); backspace(); }
+  if (e.key.toLowerCase() === 'c') { e.preventDefault(); clearAll(); }
+});
+
+/* ════════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ════════════════════════════════════════════════════════
+   UTILITY
+════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ════════════════════════════════════════════════════════
+   POLLING INTERVALS
+════════════════════════════════════════════════════════ */
+pollGesture();
+pollSentence();
+pollExtras();
+
+setInterval(pollGesture,   200);
+setInterval(pollSentence,  300);
+setInterval(pollExtras,   1000);
+</script>
+
+</body>
+</html>

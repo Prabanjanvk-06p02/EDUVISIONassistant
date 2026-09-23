@@ -1,0 +1,104 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+/* HEADER */
+header {
+    background: #1e293b;
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* LAYOUT */
+.container {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    padding: 15px;
+}
+
+.left {
+    flex: 2;
+}
+
+.right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* CARDS */
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* CAMERA */
+img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+/* TEXT */
+h3 {
+    margin-top: 0;
+}
+
+.highlight {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #334155;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+
+/* LOGIN PAGE */
+.login-box {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    margin: auto;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 6px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #22c55e;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #16a34a;
+}

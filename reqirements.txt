@@ -1,0 +1,12 @@
+flask
+opencv-python
+mediapipe
+numpy
+joblib
+tensorflow
+speechrecognition
+pyttsx3
+pyzbar
+qrcode
+google-genai
+sklearn

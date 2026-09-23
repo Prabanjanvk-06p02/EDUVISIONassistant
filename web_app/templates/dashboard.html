@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Classroom System</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
+}
+
+.container{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+    padding:20px;
+}
+
+.card{
+    background:#1e293b;
+    padding:15px;
+    border-radius:12px;
+}
+
+h2{ color:#38bdf8; }
+
+#gesture{ font-size:30px; color:#22c55e; }
+</style>
+</head>
+
+<body>
+
+<h1 style="text-align:center;">🎓 AI CLASSROOM SYSTEM</h1>
+
+<div class="container">
+
+<div class="card">
+<h2>👋 Gesture</h2>
+<img src="/video" width="100%">
+<div id="gesture">WAITING</div>
+</div>
+
+<div class="card">
+<h2>👨‍🏫 Speech</h2>
+<div id="speech"></div>
+</div>
+
+<div class="card">
+<h2>🧠 Summary</h2>
+<div id="summary"></div>
+</div>
+
+<div class="card">
+<h2>🔑 Keywords</h2>
+<div id="keywords"></div>
+</div>
+
+<div class="card">
+<h2>📊 Attendance</h2>
+<div id="attendance"></div>
+</div>
+
+</div>
+
+<script>
+setInterval(()=>{
+
+fetch("/gesture").then(r=>r.json()).then(d=>{
+document.getElementById("gesture").innerText=d.gesture;
+});
+
+fetch("/teacher_text").then(r=>r.json()).then(d=>{
+document.getElementById("speech").innerText=d.text;
+});
+
+fetch("/summary").then(r=>r.json()).then(d=>{
+document.getElementById("summary").innerText=d.summary;
+});
+
+fetch("/keywords").then(r=>r.json()).then(d=>{
+document.getElementById("keywords").innerText=d.keywords;
+});
+
+fetch("/attendance").then(r=>r.json()).then(d=>{
+document.getElementById("attendance").innerText=JSON.stringify(d);
+});
+
+},1000);
+</script>
+
+</body>
+</html>
