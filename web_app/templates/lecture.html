@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Speech & Lecture Assistant · EduVision AI</title>
+  <link rel="stylesheet" href="/static/main.css">
+  <style>
+    /* ── Lecture Layout ─────────────────────────────────── */
+    .lecture-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Soundwave bars ─────────────────────────────────── */
+    .sound-wave-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 28px;
+      padding: 6px 0;
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+    .sound-wave-container.speaking {
+      opacity: 1;
+    }
+    .wave-bar {
+      width: 4px;
+      height: 6px;
+      background: linear-gradient(180deg, var(--accent1), var(--accent2));
+      border-radius: 3px;
+      transition: height 0.1s ease;
+    }
+    .sound-wave-container.speaking .wave-bar {
+      animation: soundWave 0.75s ease-in-out infinite alternate;
+    }
+    .sound-wave-container.speaking .wave-bar:nth-child(2) { animation-delay: 0.12s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(3) { animation-delay: 0.24s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(4) { animation-delay: 0.36s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(5) { animation-delay: 0.48s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(6) { animation-delay: 0.60s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(7) { animation-delay: 0.72s; }
+
+    @keyframes soundWave {
+      0%   { height: 6px; }
+      100% { height: 26px; }
+    }
+
+    /* ── Speech live display ────────────────────────────── */
+    .speech-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .speech-current-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text-hi);
+      line-height: 1.5;
+    }
+    .speech-interim-text {
+      font-size: 0.95rem;
+      color: var(--accent1);
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    /* ── Transcript Log ─────────────────────────────────── */
+    .transcript-log {
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 6px;
+    }
+    .transcript-entry {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      display: flex;
+      gap: 10px;
+    }
+    .entry-badge {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent2);
+      font-weight: 600;
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+
+    /* ── Summary & Keywords ─────────────────────────────── */
+    .summary-box {
+      font-size: 0.98rem;
+      color: var(--text-hi);
+      line-height: 1.65;
+      padding: 18px;
+      background: rgba(129, 140, 248, 0.05);
+      border: 1px solid rgba(129, 140, 248, 0.25);
+      border-radius: var(--radius-sm);
+      min-height: 100px;
+    }
+    .summary-box.updating {
+      color: var(--accent1);
+      font-style: italic;
+    }
+
+    .kw-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .kw-pill {
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(251,146,60,.12), rgba(244,63,94,.12));
+      border: 1px solid rgba(251,146,60,.30);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent4);
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      transition: all .2s;
+    }
+    .kw-pill:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent4);
+      box-shadow: 0 4px 12px rgba(251,146,60,.3);
+    }
+
+    @media (max-width: 960px) {
+      .lecture-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION HEADER ════════════════════════════════ -->
+  <header class="app-header">
+    <a href="/" class="brand-link">
+      <div class="brand-logo-icon">🤟</div>
+      <div class="brand-text">EduVision<span class="brand-ai">AI</span></div>
+      <span class="brand-badge">Lecture</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link">
+        <span class="nav-link-icon">🏠</span> Home
+      </a>
+      <a href="/translate" class="nav-link">
+        <span class="nav-link-icon">🤟</span> Sign Studio
+      </a>
+      <a href="/lecture" class="nav-link active">
+        <span class="nav-link-icon">🎤</span> Speech & Notes
+      </a>
+      <a href="/dictionary" class="nav-link">
+        <span class="nav-link-icon">📚</span> Sign Library
+      </a>
+      <a href="/system" class="nav-link">
+        <span class="nav-link-icon">⚙️</span> System
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="status-pill" id="mic-status-pill">
+        <span class="status-dot" style="background:#f87171; box-shadow:0 0 8px #f87171;"></span>
+        <span id="mic-status-text">Mic Active</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN CONTENT WRAPPER ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <div class="lecture-layout">
+
+      <!-- Left Column: Audio Capture & Live Transcripts -->
+      <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="card-title">
+            <span class="card-title-icon">🎤</span> Live Voice & Speech Transcription
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="btn-toggle-mic" onclick="toggleMicrophone()" style="padding:6px 12px;">
+              <span id="mic-icon">🎙️</span> <span id="mic-label">Mute Mic</span>
+            </button>
+            <button class="btn btn-ghost" onclick="clearSpeech()" style="padding:6px 12px;">
+              <span>🧹 Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Equalizer animation -->
+        <div class="sound-wave-container" id="sound-wave">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+
+        <!-- Current live speech -->
+        <div>
+          <div class="raw-label">Active Speech Stream</div>
+          <div class="speech-box">
+            <div class="speech-current-text" id="speech-text">Listening for teacher or student voice…</div>
+            <div class="speech-interim-text" id="speech-interim"></div>
+          </div>
+        </div>
+
+        <!-- Transcript history log -->
+        <div>
+          <div class="raw-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Chronological Lecture Transcript</span>
+            <span id="transcript-count" style="color:var(--text-low); font-size:.72rem;">0 entries</span>
+          </div>
+          <div class="transcript-log" id="transcript-log">
+            <div class="transcript-entry" style="color:var(--text-low); font-style:italic;">
+              Speak into your microphone to populate lecture transcript…
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: AI Educational Synopsis & Topics -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <!-- Educational Summary Card -->
+        <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-title">
+              <span class="card-title-icon">🧠</span> AI Educational Summary
+            </div>
+            <span class="ai-badge">SMART AI</span>
+          </div>
+
+          <div class="summary-box" id="summary-text">
+            Educational lecture summary will automatically synthesize as you speak…
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="copySummary()">
+              <span>📋 Copy Summary</span>
+            </button>
+            <button class="btn btn-ghost" onclick="speakSummary()">
+              <span>🔊 Read Aloud</span>
+            </button>
+            <button class="btn btn-ghost" onclick="downloadNotes()">
+              <span>💾 Download Notes</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Key Concepts Card -->
+        <div class="card" style="padding:22px; display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-title">
+              <span class="card-title-icon">🔑</span> Extracted Concepts & Topics
+            </div>
+            <div id="kw-count" style="font-size:.72rem; color:var(--text-mid);">0 Topics</div>
+          </div>
+
+          <div class="kw-container" id="keywords-wrap">
+            <span style="color:var(--text-low); font-size:.85rem; font-style:italic;">
+              Topics will appear automatically as speech is analyzed…
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <div class="footer-brand">EduVision AI · Speech & Lecture Hub</div>
+    <div class="kbd-hint">
+      <span>Web Speech API Active</span>
+      <span>SMART AI Flash Synopsis Engine</span>
+    </div>
+  </footer>
+
+  <script>
+    let speechRecognition = null;
+    let isUserMicActive = true;
+    let isRecognizing = false;
+    let speechRestartTimer = null;
+    let speechHistory = [];
+    let lastServerSpeech = '';
+    let toastTimer = null;
+
+    /* ── Web Speech Recognition Engine ───────────────── */
+    function initSpeechEngine() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const statusPill = document.getElementById('mic-status-pill');
+      const statusText = document.getElementById('mic-status-text');
+      const soundWave = document.getElementById('sound-wave');
+      const micLabel = document.getElementById('mic-label');
+      const micIcon = document.getElementById('mic-icon');
+
+      if (!SpeechRec) {
+        if (statusText) statusText.textContent = 'Server Mic Mode';
+        return;
+      }
+
+      try {
+        speechRecognition = new SpeechRec();
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = true;
+        speechRecognition.lang = 'en-US';
+        speechRecognition.maxAlternatives = 1;
+
+        speechRecognition.onstart = () => {
+          isRecognizing = true;
+          if (statusText) statusText.textContent = 'Mic Active';
+          if (statusPill) statusPill.style.background = 'rgba(248, 113, 113, 0.12)';
+          if (micLabel) micLabel.textContent = 'Mute Mic';
+          if (micIcon) micIcon.textContent = '🎙️';
+          if (soundWave) soundWave.classList.add('speaking');
+        };
+
+        speechRecognition.onresult = (e) => {
+          let interim = '';
+          let finalPhrase = '';
+
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            const tr = e.results[i][0].transcript;
+            if (e.results[i].isFinal) {
+              finalPhrase += tr;
+            } else {
+              interim += tr;
+            }
+          }
+
+          const interimEl = document.getElementById('speech-interim');
+          if (interimEl) {
+            interimEl.textContent = interim ? `“${interim.trim()}…”` : '';
+          }
+
+          if (soundWave) soundWave.classList.add('speaking');
+
+          if (finalPhrase.trim()) {
+            const text = finalPhrase.trim();
+            document.getElementById('speech-text').textContent = text;
+            if (interimEl) interimEl.textContent = '';
+            addSpeechEntry(text);
+
+            // Sync with backend Neural AI
+            fetch('/update_speech', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: text, source: 'browser_mic' })
+            }).catch(() => {});
+          }
+        };
+
+        speechRecognition.onerror = (e) => {
+          if (e.error === 'not-allowed') {
+            isUserMicActive = false;
+            if (statusText) statusText.textContent = 'Permission Denied';
+            showToast('⚠️ Microphone blocked. Allow mic permissions in your browser.');
+          }
+        };
+
+        speechRecognition.onend = () => {
+          isRecognizing = false;
+          if (soundWave) soundWave.classList.remove('speaking');
+          if (isUserMicActive) {
+            clearTimeout(speechRestartTimer);
+            speechRestartTimer = setTimeout(() => {
+              if (isUserMicActive && !isRecognizing) {
+                try { speechRecognition.start(); } catch(err) {}
+              }
+            }, 250);
+          } else {
+            if (statusText) statusText.textContent = 'Mic Muted';
+            if (statusPill) statusPill.style.background = 'rgba(148, 163, 184, 0.12)';
+            if (micLabel) micLabel.textContent = 'Unmute Mic';
+            if (micIcon) micIcon.textContent = '🔇';
+          }
+        };
+
+        try {
+          speechRecognition.start();
+        } catch(e) {}
+
+      } catch(err) {
+        console.warn("Speech init note:", err);
+      }
+    }
+
+    function toggleMicrophone() {
+      if (!speechRecognition) {
+        showToast('ℹ️ Using server microphone fallback.');
+        return;
+      }
+      if (isUserMicActive) {
+        isUserMicActive = false;
+        clearTimeout(speechRestartTimer);
+        try { speechRecognition.stop(); } catch(e) {}
+        showToast('🔇 Microphone paused.');
+      } else {
+        isUserMicActive = true;
+        try { speechRecognition.start(); } catch(e) {}
+        showToast('🎙️ Microphone unmuted & listening.');
+      }
+    }
+
+    function addSpeechEntry(text) {
+      if (!text || !text.trim()) return;
+      if (speechHistory.length > 0 && speechHistory[speechHistory.length - 1] === text) return;
+      speechHistory.push(text);
+      if (speechHistory.length > 25) speechHistory.shift();
+      renderTranscriptLog(speechHistory);
+    }
+
+    function renderTranscriptLog(history) {
+      const container = document.getElementById('transcript-log');
+      const countEl = document.getElementById('transcript-count');
+      if (!container) return;
+
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div class="transcript-entry" style="color:var(--text-low); font-style:italic;">Speak into microphone to populate lecture transcript…</div>';
+        if (countEl) countEl.textContent = '0 entries';
+        return;
+      }
+
+      if (countEl) countEl.textContent = `${history.length} entries`;
+
+      container.innerHTML = history.slice().reverse().map((item, idx) => `
+        <div class="transcript-entry">
+          <span class="entry-badge">#${history.length - idx}</span>
+          <span style="color:var(--text-hi);">${escHtml(item)}</span>
+        </div>
+      `).join('');
+    }
+
+    async function clearSpeech() {
+      speechHistory = [];
+      renderTranscriptLog([]);
+      document.getElementById('speech-text').textContent = 'Listening for speech…';
+      document.getElementById('speech-interim').textContent = '';
+      document.getElementById('summary-text').textContent = 'Summary will appear here as speech is detected…';
+      document.getElementById('keywords-wrap').innerHTML = '<span style="color:var(--text-low); font-size:.85rem; font-style:italic;">Topics will appear automatically as speech is analyzed…</span>';
+      document.getElementById('kw-count').textContent = '0 Topics';
+
+      try {
+        await fetch('/clear_speech', { method: 'POST' });
+        showToast('🧹 Lecture notes cleared.');
+      } catch(e) {}
+    }
+
+    /* ── Poll Server Speech & Summary (1.2s) ──────────── */
+    async function pollExtras() {
+      try {
+        const r = await fetch('/teacher_text');
+        const data = await r.json();
+
+        const serverText    = data.text || '';
+        const serverHist    = data.history || [];
+        const serverSummary = data.summary || '';
+        const serverKw      = data.keywords || [];
+        const isSum         = data.is_summarizing || false;
+
+        const speechEl = document.getElementById('speech-text');
+        if (serverText && serverText !== 'Listening...' && serverText !== lastServerSpeech) {
+          lastServerSpeech = serverText;
+          if (!isRecognizing || speechEl.textContent === 'Listening for teacher or student voice…') {
+            speechEl.textContent = serverText;
+          }
+        }
+
+        if (serverHist.length > speechHistory.length) {
+          speechHistory = serverHist;
+          renderTranscriptLog(speechHistory);
+        }
+
+        const sumEl = document.getElementById('summary-text');
+        if (isSum) {
+          sumEl.innerHTML = '<span style="color:var(--accent1); font-style:italic;">✨ AI is synthesizing educational summary…</span>';
+        } else if (serverSummary) {
+          sumEl.textContent = serverSummary;
+        }
+
+        const kwWrap = document.getElementById('keywords-wrap');
+        const kwCount = document.getElementById('kw-count');
+        if (serverKw && serverKw.length > 0) {
+          if (kwCount) kwCount.textContent = `${serverKw.length} Topic${serverKw.length > 1 ? 's' : ''}`;
+          kwWrap.innerHTML = serverKw.map(
+            k => `<span class="kw-pill">${escHtml(k)}</span>`
+          ).join('');
+        }
+
+      } catch(e) {}
+    }
+
+    function copySummary() {
+      const txt = document.getElementById('summary-text').textContent.trim();
+      if (!txt || txt.includes('Summary will appear here')) {
+        showToast('⚠️ No summary available to copy.');
+        return;
+      }
+      navigator.clipboard.writeText(txt).then(() => {
+        showToast('📋 Summary copied to clipboard!');
+      });
+    }
+
+    function speakSummary() {
+      const txt = document.getElementById('summary-text').textContent.trim();
+      if (!txt || txt.includes('Summary will appear here')) {
+        showToast('⚠️ No summary available to speak.');
+        return;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.rate = 1.0;
+        window.speechSynthesis.speak(u);
+        showToast('🔊 Reading summary aloud…');
+      }
+    }
+
+    function downloadNotes() {
+      if (speechHistory.length === 0) {
+        showToast('⚠️ No notes to download yet.');
+        return;
+      }
+      const sum = document.getElementById('summary-text').textContent.trim();
+      const content = `EDUVISION AI - LECTURE NOTES & SYNOPSIS\nDate: ${new Date().toLocaleString()}\n\n=== AI SYNOPSIS ===\n${sum}\n\n=== TRANSCRIPT LOG ===\n` +
+        speechHistory.map((h, i) => `[${i+1}] ${h}`).join('\n');
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `lecture_notes_${Date.now()}.txt`;
+      a.click();
+      showToast('💾 Notes downloaded!');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    initSpeechEngine();
+    pollExtras();
+    setInterval(pollExtras, 1200);
+  </script>
+</body>
+</html>

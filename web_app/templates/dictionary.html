@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Language Library · EduVision AI</title>
+  <link rel="stylesheet" href="/static/main.css">
+  <style>
+    .dict-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .dict-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .dict-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-mid);
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    /* Filters */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-hi);
+    }
+    .filter-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--border-hi);
+      color: var(--accent1);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+    }
+
+    /* Grid */
+    .dict-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 22px;
+    }
+    .dict-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .dict-card:hover {
+      border-color: var(--border-hi);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), var(--glow-cyan);
+    }
+    .dict-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .dict-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-sm);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+    .dict-cat {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-mid);
+      border: 1px solid var(--border);
+    }
+    .dict-word {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-hi);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .dict-step-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent1);
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .dict-step-desc {
+      font-size: 0.86rem;
+      color: var(--text-mid);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .dict-example {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--accent2);
+      padding: 8px 12px;
+      border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      margin-bottom: 18px;
+    }
+    .dict-example strong {
+      color: var(--text-hi);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION HEADER ════════════════════════════════ -->
+  <header class="app-header">
+    <a href="/" class="brand-link">
+      <div class="brand-logo-icon">🤟</div>
+      <div class="brand-text">EduVision<span class="brand-ai">AI</span></div>
+      <span class="brand-badge">Library</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link">
+        <span class="nav-link-icon">🏠</span> Home
+      </a>
+      <a href="/translate" class="nav-link">
+        <span class="nav-link-icon">🤟</span> Sign Studio
+      </a>
+      <a href="/lecture" class="nav-link">
+        <span class="nav-link-icon">🎤</span> Speech & Notes
+      </a>
+      <a href="/dictionary" class="nav-link active">
+        <span class="nav-link-icon">📚</span> Sign Library
+      </a>
+      <a href="/system" class="nav-link">
+        <span class="nav-link-icon">⚙️</span> System
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <a href="/translate" class="btn btn-primary btn-sm" style="padding:7px 14px; font-size:.78rem;">
+        <span>Launch Studio →</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ══ MAIN CONTENT WRAPPER ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <div class="dict-header">
+      <div>
+        <h1 class="dict-title">Interactive Sign Language Library</h1>
+        <p class="dict-subtitle">
+          Master the 9 American Sign Language gestures recognized by our real-time neural model. Review finger placements, palm orientations, and practical classroom contexts.
+        </p>
+      </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filterCategory('all', this)">All (9 Signs)</button>
+      <button class="filter-btn" onclick="filterCategory('greetings', this)">Greetings & Social</button>
+      <button class="filter-btn" onclick="filterCategory('pronouns', this)">Pronouns</button>
+      <button class="filter-btn" onclick="filterCategory('needs', this)">Needs & Food</button>
+      <button class="filter-btn" onclick="filterCategory('affirmations', this)">Yes & No</button>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="dict-grid" id="dict-grid">
+
+      <!-- Sign: Hello -->
+      <div class="dict-card" data-cat="greetings">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent1);">👋</div>
+            <span class="dict-cat">Greetings</span>
+          </div>
+          <div class="dict-word">Hello</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Extend flat palm with fingers joined, thumb relaxed. Touch fingertips near your temple or forehead and salute outward in a friendly arc toward your viewer.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"Hello teacher, good morning."</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: Yes -->
+      <div class="dict-card" data-cat="affirmations">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent3);">✊</div>
+            <span class="dict-cat">Affirmations</span>
+          </div>
+          <div class="dict-word">Yes</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Make a loose fist with knuckles facing outward. Tilt your wrist forward and back two times, mimicking the head nodding motion to indicate affirmative response.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"Yes, I understand the lesson."</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: Not -->
+      <div class="dict-card" data-cat="affirmations">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--danger);">🙅</div>
+            <span class="dict-cat">Affirmations</span>
+          </div>
+          <div class="dict-word">Not</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Place the thumb of an 'A' or open fist under your chin, then flick the thumb and hand outward away from your mouth with a decisive head shake.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"I am not finished yet."</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: My -->
+      <div class="dict-card" data-cat="pronouns">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent2);">✋</div>
+            <span class="dict-cat">Pronouns</span>
+          </div>
+          <div class="dict-word">My / Mine</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Place your open palm flat against the center of your chest with fingers extended and joined. Demonstrates possession and self-reference.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"This is my assignment book."</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: You -->
+      <div class="dict-card" data-cat="pronouns">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent1);">👉</div>
+            <span class="dict-cat">Pronouns</span>
+          </div>
+          <div class="dict-word">You</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Point your index finger directly toward the person or camera with palm facing inward or down. Hold steady in comfortable line of sight.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"Do you have a pencil?"</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: We -->
+      <div class="dict-card" data-cat="pronouns">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent4);">👥</div>
+            <span class="dict-cat">Pronouns</span>
+          </div>
+          <div class="dict-word">We / Us</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Touch your index finger to your right chest shoulder, then smoothly arc across your body to touch your left shoulder in a semicircular motion.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"We are ready for the presentation."</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: Help -->
+      <div class="dict-card" data-cat="needs">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent-pink);">🆘</div>
+            <span class="dict-cat">Needs & Food</span>
+          </div>
+          <div class="dict-word">Help</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Make a 'thumbs-up' fist with dominant hand and rest it on the flat palm of your non-dominant hand. Lift both hands upward together smoothly.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"Can you help me with this question?"</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: Water -->
+      <div class="dict-card" data-cat="needs">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent1);">💧</div>
+            <span class="dict-cat">Needs & Food</span>
+          </div>
+          <div class="dict-word">Water</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Form the letter 'W' with index, middle, and ring fingers extended. Tap your index finger gently against your chin or lower lip twice.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"May I please get a drink of water?"</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+      <!-- Sign: Food -->
+      <div class="dict-card" data-cat="needs">
+        <div>
+          <div class="dict-card-top">
+            <div class="dict-icon" style="color:var(--accent4);">🍎</div>
+            <span class="dict-cat">Needs & Food</span>
+          </div>
+          <div class="dict-word">Food / Eat</div>
+          <div class="dict-step-label">Hand Posture & Motion</div>
+          <p class="dict-step-desc">
+            Bring the tips of all four fingers together to touch the tip of your thumb (flat-O handshape). Tap your fingertips lightly against your lips twice.
+          </p>
+          <div class="dict-example">
+            Classroom Usage: <strong>"Is it lunchtime for food?"</strong>
+          </div>
+        </div>
+        <a href="/translate" class="btn btn-ghost" style="width:100%; justify-content:center;">
+          Practice in Studio →
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <div class="footer-brand">EduVision AI · Sign Language Library</div>
+    <div class="kbd-hint">
+      <span>9 Trained Classes in TensorFlow Model</span>
+    </div>
+  </footer>
+
+  <script>
+    function filterCategory(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.dict-card');
+      cards.forEach(card => {
+        if (cat === 'all' || card.dataset.cat === cat) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

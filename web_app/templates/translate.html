@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Sign Studio · EduVision AI</title>
+  <link rel="stylesheet" href="/static/main.css">
+  <style>
+    /* ── Two-column layout ──────────────────────────────── */
+    .studio-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Camera Card ────────────────────────────────────── */
+    .cam-wrapper {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4 / 3;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+    .cam-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Floating badges on camera */
+    .cam-hands-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(5, 10, 24, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+    .hand-icon {
+      opacity: 0.35;
+      transition: all 0.2s;
+    }
+    .hand-icon.active {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px var(--accent1));
+      transform: scale(1.15);
+    }
+
+    .cam-gesture-badge {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      background: rgba(5, 10, 24, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .gesture-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent1);
+      text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+    .gesture-meta {
+      font-size: 0.78rem;
+      color: var(--text-mid);
+    }
+
+    .conf-meter {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .conf-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent1), var(--accent3));
+      transition: width 0.15s ease-out;
+    }
+
+    /* ── Sign Sequence Section ──────────────────────────── */
+    .chips-panel {
+      min-height: 80px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .chips-empty {
+      color: var(--text-low);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+    .sign-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: var(--radius-xs);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-hi);
+      animation: chipPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes chipPop {
+      0%   { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .chip-idx {
+      font-size: 0.7rem;
+      color: var(--accent1);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .sentence-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      min-height: 52px;
+    }
+    .ai-sentence-box {
+      background: rgba(129, 140, 248, 0.06);
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: #fff;
+      min-height: 60px;
+    }
+    .ai-sentence-box.correcting {
+      color: var(--accent1);
+      font-style: italic;
+      animation: pulseText 1.5s infinite;
+    }
+    @keyframes pulseText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Quick gestures cheat row */
+    .gestures-cheat {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .cheat-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+    }
+
+    @media (max-width: 960px) {
+      .studio-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION HEADER ════════════════════════════════ -->
+  <header class="app-header">
+    <a href="/" class="brand-link">
+      <div class="brand-logo-icon">🤟</div>
+      <div class="brand-text">EduVision<span class="brand-ai">AI</span></div>
+      <span class="brand-badge">Studio</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link">
+        <span class="nav-link-icon">🏠</span> Home
+      </a>
+      <a href="/translate" class="nav-link active">
+        <span class="nav-link-icon">🤟</span> Sign Studio
+      </a>
+      <a href="/lecture" class="nav-link">
+        <span class="nav-link-icon">🎤</span> Speech & Notes
+      </a>
+      <a href="/dictionary" class="nav-link">
+        <span class="nav-link-icon">📚</span> Sign Library
+      </a>
+      <a href="/system" class="nav-link">
+        <span class="nav-link-icon">⚙️</span> System
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="header-status">Camera Live</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN CONTENT WRAPPER ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <div class="studio-layout">
+
+      <!-- Left Column: Camera Card -->
+      <div class="card" style="display:flex; flex-direction:column; gap:16px; padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="card-title">
+            <span class="card-title-icon">📷</span> Live Gesture Tracking
+          </div>
+          <div id="conf-val" style="font-family:'JetBrains Mono',monospace; font-size:.78rem; color:var(--accent1);">0.0% Conf</div>
+        </div>
+
+        <div class="cam-wrapper">
+          <img src="/video" id="cam-feed" alt="Live Gesture Video Stream">
+
+          <!-- Hand badges -->
+          <div class="cam-hands-badge">
+            <span class="hand-icon" id="hand-l" title="Left Hand">🤚 L</span>
+            <span class="hand-icon" id="hand-r" title="Right Hand">🤚 R</span>
+            <span id="hand-count" style="font-weight:600; color:var(--accent1);">0 Detected</span>
+          </div>
+
+          <!-- Active Gesture Badge -->
+          <div class="cam-gesture-badge">
+            <div>
+              <div class="gesture-name" id="gesture-name">WAITING</div>
+              <div class="gesture-meta" id="gesture-desc">Show hands to camera to sign</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.75rem; color:var(--text-low); text-transform:uppercase;">Hold to Add</div>
+              <div style="font-size:1.1rem; font-weight:700; color:var(--accent3);" id="gesture-conf">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conf-meter">
+          <div class="conf-fill" id="conf-bar"></div>
+        </div>
+
+        <!-- Gesture vocabulary cheatsheet -->
+        <div>
+          <div class="raw-label" style="display:flex; justify-content:space-between;">
+            <span>Supported Vocabulary (9 Signs)</span>
+            <a href="/dictionary" style="color:var(--accent1); text-decoration:none; font-size:.72rem;">View Dictionary →</a>
+          </div>
+          <div class="gestures-cheat">
+            <span class="cheat-pill">hello</span>
+            <span class="cheat-pill">yes</span>
+            <span class="cheat-pill">not</span>
+            <span class="cheat-pill">my</span>
+            <span class="cheat-pill">you</span>
+            <span class="cheat-pill">help</span>
+            <span class="cheat-pill">water</span>
+            <span class="cheat-pill">food</span>
+            <span class="cheat-pill">we</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Sentence Builder & AI Polisher -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <!-- Sign Words Sequence Card -->
+        <div class="card" style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-title">
+              <span class="card-title-icon">✋</span> Sign Sequence Accumulator
+            </div>
+            <div id="word-count" style="font-size:.75rem; color:var(--text-mid);">0 words</div>
+          </div>
+
+          <!-- Sequence Chips -->
+          <div class="chips-panel" id="chips-container">
+            <span class="chips-empty" id="chips-empty">Sign a gesture to start building your sentence…</span>
+          </div>
+
+          <!-- Raw signs sentence -->
+          <div>
+            <div class="raw-label">Raw Signs Stream</div>
+            <div class="sentence-box" id="raw-sentence">—</div>
+          </div>
+
+          <!-- AI Corrected Sentence -->
+          <div>
+            <div class="raw-label" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>✨ Neural AI Polished Sentence</span>
+              <span class="ai-badge">SMART AI</span>
+            </div>
+            <div class="ai-sentence-box" id="ai-sentence">
+              Press <strong>Correct with AI</strong> to generate natural English.
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-correct" onclick="correctWithAI()">
+              <span>✨ Correct with AI</span>
+            </button>
+            <button class="btn btn-success" id="btn-speak" onclick="speakSentence()">
+              <span>🔊 Speak Sentence</span>
+            </button>
+            <button class="btn btn-ghost" id="btn-undo" onclick="undoWord()">
+              <span>⌫ Undo</span>
+            </button>
+            <button class="btn btn-danger" id="btn-clear" onclick="clearSentence()">
+              <span>🗑 Clear All</span>
+            </button>
+          </div>
+
+          <!-- Keyboard shortcut tips -->
+          <div style="font-size:.72rem; color:var(--text-low); display:flex; gap:14px; flex-wrap:wrap; padding-top:4px;">
+            <span><kbd>Enter</kbd> Correct AI</span>
+            <span><kbd>Space</kbd> Speak</span>
+            <span><kbd>Backspace</kbd> Undo</span>
+            <span><kbd>C</kbd> Clear</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <div class="footer-brand">EduVision AI · Sign Language Studio</div>
+    <div class="kbd-hint">
+      <span>Hold gesture steadily for 0.5s to add word</span>
+      <span>Drop hand to space between words</span>
+    </div>
+  </footer>
+
+  <script>
+    let currentGesture = 'WAITING';
+    let currentWords = [];
+    let isCorrecting = false;
+    let prevWordCount = 0;
+    let toastTimer = null;
+
+    /* ── Poll Gesture (200ms) ────────────────────────── */
+    async function pollGesture() {
+      try {
+        const r = await fetch('/gesture');
+        const d = await r.json();
+        const g = d.gesture || 'WAITING';
+        const c = d.confidence || 0;
+        const h = d.hands || 0;
+
+        const nameEl = document.getElementById('gesture-name');
+        const descEl = document.getElementById('gesture-desc');
+        if (g !== currentGesture) {
+          nameEl.textContent = g;
+          currentGesture = g;
+        }
+
+        descEl.textContent =
+          g === 'WAITING' ? 'Show hands to camera to sign' :
+          g === 'Unknown' ? 'Low confidence — adjust hand posture' :
+          `Detected with ${c}% confidence`;
+
+        document.getElementById('conf-bar').style.width = c + '%';
+        document.getElementById('conf-val').textContent = c.toFixed(0) + '% Conf';
+        document.getElementById('gesture-conf').textContent = c.toFixed(0) + '%';
+
+        const handL = document.getElementById('hand-l');
+        const handR = document.getElementById('hand-r');
+        if (h === 0) {
+          handL.className = 'hand-icon'; handR.className = 'hand-icon';
+        } else if (h === 1) {
+          handL.className = 'hand-icon active'; handR.className = 'hand-icon';
+        } else {
+          handL.className = 'hand-icon active'; handR.className = 'hand-icon active';
+        }
+        document.getElementById('hand-count').textContent = `${h} Hand${h===1?'':'s'} Detected`;
+
+      } catch(e) {}
+    }
+
+    /* ── Poll Sentence (300ms) ───────────────────────── */
+    async function pollSentence() {
+      try {
+        const r = await fetch('/sentence');
+        const d = await r.json();
+        currentWords = d.words || [];
+        const raw = d.raw || '';
+        const ai = d.corrected || '';
+        isCorrecting = d.is_correcting || false;
+
+        document.getElementById('word-count').textContent =
+          currentWords.length === 0 ? '0 words' :
+          currentWords.length === 1 ? '1 word' : `${currentWords.length} words`;
+
+        renderChips(currentWords);
+        document.getElementById('raw-sentence').textContent = raw || '—';
+
+        const aiEl = document.getElementById('ai-sentence');
+        if (isCorrecting) {
+          aiEl.textContent = '✨ Neural AI is transforming your signs into fluent English…';
+          aiEl.classList.add('correcting');
+        } else {
+          aiEl.classList.remove('correcting');
+          if (ai && ai !== 'CORRECTING') {
+            aiEl.innerHTML = '<strong>' + escHtml(ai) + '</strong>';
+          } else if (!ai) {
+            aiEl.innerHTML = 'Press <strong>Correct with AI</strong> to generate natural English.';
+          }
+        }
+
+        if (currentWords.length > prevWordCount) {
+          showToast(`✋ "${currentWords[currentWords.length - 1]}" added to sequence!`);
+        }
+        prevWordCount = currentWords.length;
+
+      } catch(e) {}
+    }
+
+    function renderChips(words) {
+      const container = document.getElementById('chips-container');
+      const emptyMsg = document.getElementById('chips-empty');
+      if (!words || words.length === 0) {
+        emptyMsg.style.display = 'inline';
+        [...container.querySelectorAll('.sign-chip')].forEach(c => c.remove());
+        return;
+      }
+      emptyMsg.style.display = 'none';
+
+      const existing = [...container.querySelectorAll('.sign-chip')];
+      while (existing.length > words.length) {
+        existing.pop().remove();
+      }
+      words.forEach((w, idx) => {
+        if (idx < existing.length) {
+          existing[idx].querySelector('.chip-word').textContent = w;
+        } else {
+          const chip = document.createElement('span');
+          chip.className = 'sign-chip';
+          chip.innerHTML = `<span class="chip-idx">#${idx+1}</span><span class="chip-word">${escHtml(w)}</span>`;
+          container.appendChild(chip);
+        }
+      });
+    }
+
+    async function correctWithAI() {
+      if (currentWords.length === 0) {
+        showToast('⚠️ No signs detected yet.');
+        return;
+      }
+      if (isCorrecting) return;
+      try {
+        const r = await fetch('/ai_correct', { method: 'POST' });
+        const d = await r.json();
+        if (d.status === 'started') {
+          showToast('✨ AI is polishing your sentence…');
+        }
+      } catch(e) {
+        showToast('⚠️ AI service error');
+      }
+    }
+
+    async function speakSentence() {
+      try {
+        const r = await fetch('/speak_sentence', { method: 'POST' });
+        const d = await r.json();
+        if (d.status === 'speaking') {
+          showToast(`🔊 Speaking: "${d.text}"`);
+        } else {
+          showToast('⚠️ No sentence available to speak.');
+        }
+      } catch(e) {
+        showToast('⚠️ Speech playback error');
+      }
+    }
+
+    async function undoWord() {
+      try {
+        await fetch('/backspace_sentence', { method: 'POST' });
+        showToast('⌫ Undone last word.');
+      } catch(e) {}
+    }
+
+    async function clearSentence() {
+      try {
+        await fetch('/clear_sentence', { method: 'POST' });
+        showToast('🗑 Sequence cleared.');
+      } catch(e) {}
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'Enter') { e.preventDefault(); correctWithAI(); }
+      if (e.key === ' ') { e.preventDefault(); speakSentence(); }
+      if (e.key === 'Backspace') { e.preventDefault(); undoWord(); }
+      if (e.key.toLowerCase() === 'c') { e.preventDefault(); clearSentence(); }
+    });
+
+    pollGesture();
+    pollSentence();
+    setInterval(pollGesture, 200);
+    setInterval(pollSentence, 300);
+  </script>
+</body>
+</html>

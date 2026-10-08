@@ -334,7 +334,213 @@
 
     .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
 
-    /* ── Speech / Keywords ──────────────────────────────── */
+    /* ── Speech / Keywords / Audio Visualizer ──────────────── */
+    .speech-control-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .speech-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mic-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      transition: all 0.25s ease;
+    }
+    .mic-pill.active {
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      color: #f87171;
+    }
+    .mic-pill.active .mic-dot {
+      background: #f87171;
+      box-shadow: 0 0 8px #f87171;
+      animation: pulseMic 1.2s infinite;
+    }
+    .mic-pill.paused {
+      background: rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: var(--text-mid);
+    }
+    .mic-pill.paused .mic-dot {
+      background: var(--text-mid);
+    }
+    .mic-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    @keyframes pulseMic {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .speech-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text-hi);
+      font-size: 0.85rem;
+      padding: 4px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--border-hi);
+      transform: translateY(-1px);
+    }
+    .btn-icon-sm {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      color: var(--text-hi);
+      font-size: 0.75rem;
+      padding: 3px 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-icon-sm:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--border-hi);
+    }
+
+    /* Soundwave bars */
+    .sound-wave-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 16px;
+      opacity: 0.3;
+      transition: opacity 0.3s;
+    }
+    .sound-wave-container.speaking {
+      opacity: 1;
+    }
+    .wave-bar {
+      width: 3px;
+      height: 4px;
+      background: var(--accent1);
+      border-radius: 2px;
+      transition: height 0.1s ease;
+    }
+    .sound-wave-container.speaking .wave-bar {
+      animation: soundWave 0.8s ease-in-out infinite alternate;
+    }
+    .sound-wave-container.speaking .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+    .sound-wave-container.speaking .wave-bar:nth-child(5) { animation-delay: 0.6s; }
+
+    @keyframes soundWave {
+      0%   { height: 4px; }
+      100% { height: 16px; }
+    }
+
+    /* Speech box */
+    .speech-display-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .speech-live-text {
+      font-size: 0.88rem;
+      color: var(--text-hi);
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .speech-interim-text {
+      font-size: 0.82rem;
+      color: var(--accent1);
+      font-style: italic;
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+
+    /* Recent Utterances */
+    .speech-recent-wrap {
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .recent-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: var(--text-low);
+      letter-spacing: 0.05em;
+    }
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+    .recent-item {
+      font-size: 0.75rem;
+      color: var(--text-mid);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 3px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .recent-item::before {
+      content: '•';
+      color: var(--accent2);
+    }
+    .recent-empty {
+      font-size: 0.72rem;
+      color: var(--text-low);
+      font-style: italic;
+    }
+
+    /* Summary Box */
+    .summary-box {
+      font-size: 0.88rem;
+      color: var(--text-hi);
+      line-height: 1.6;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border);
+      min-height: 70px;
+    }
+    .summary-box.updating {
+      opacity: 0.65;
+    }
+
     .info-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     }
@@ -345,13 +551,19 @@
       border-radius: var(--radius-xs);
       min-height: 48px;
     }
-    .kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+    .kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0; }
     .kw-tag {
-      padding: 3px 10px; border-radius: 999px;
-      background: rgba(251,146,60,.10);
-      border: 1px solid rgba(251,146,60,.25);
+      padding: 4px 11px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(251,146,60,.12), rgba(244,63,94,.12));
+      border: 1px solid rgba(251,146,60,.30);
       font-size: .73rem; font-weight: 600;
       color: var(--accent4);
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+      transition: all .2s;
+    }
+    .kw-tag:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent4);
     }
 
     /* ── Footer ─────────────────────────────────────────── */
@@ -460,17 +672,57 @@
           <div class="stable-stripe" id="stable-stripe"></div>
         </div>
 
-        <!-- Quick info: speech input -->
-        <div>
-          <div class="raw-label">🎤 Speech Input</div>
-          <div class="info-text" id="speech-text">Listening…</div>
+        <!-- Enhanced Speech Input Section -->
+        <div class="speech-control-card">
+          <div class="speech-header-row">
+            <div class="raw-label" style="margin-bottom:0; display:flex; align-items:center; gap:8px;">
+              <span>🎤 Speech Listening</span>
+              <span id="mic-status-pill" class="mic-pill active">
+                <span class="mic-dot"></span>
+                <span id="mic-status-text">Active</span>
+              </span>
+            </div>
+            <div class="speech-actions">
+              <button class="btn-icon" id="btn-toggle-mic" onclick="toggleMicrophone()" title="Toggle Microphone">
+                <span id="mic-btn-icon">🎙️</span>
+              </button>
+              <button class="btn-icon" onclick="clearSpeech()" title="Clear Speech History">
+                <span>🧹</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Soundwave Visualizer Bars -->
+          <div class="sound-wave-container" id="sound-wave">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+
+          <!-- Live Speech Container -->
+          <div class="speech-display-box" id="speech-display">
+            <div class="speech-live-text" id="speech-text">Listening for speech…</div>
+            <div class="speech-interim-text" id="speech-interim"></div>
+          </div>
+
+          <div class="speech-recent-wrap" id="speech-recent-wrap">
+            <div class="recent-label">Recent Speech:</div>
+            <div class="recent-list" id="speech-history-list">
+              <span class="recent-empty">No speech recorded yet</span>
+            </div>
+          </div>
         </div>
 
         <!-- Keywords -->
-        <div>
-          <div class="raw-label">🔑 Keywords</div>
+        <div style="margin-top:2px;">
+          <div class="raw-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🔑 Topics & Key Concepts</span>
+            <span id="kw-count" style="font-size:.7rem; color:var(--text-low);">0 topics</span>
+          </div>
           <div class="kw-wrap" id="keywords-wrap">
-            <span style="color:var(--text-low); font-size:.8rem;">—</span>
+            <span style="color:var(--text-low); font-size:.8rem;">Speak to extract keywords…</span>
           </div>
         </div>
       </div>
@@ -501,7 +753,7 @@
         <div>
           <div class="ai-label">
             <span>✨ AI Corrected Sentence</span>
-            <span class="ai-badge">GEMINI</span>
+            <span class="ai-badge">SMART AI</span>
           </div>
           <div class="ai-sentence" id="ai-sentence">Press <strong>Correct with AI</strong> to generate a natural sentence from your signs.</div>
         </div>
@@ -533,14 +785,19 @@
     </div>
 
     <!-- ── Summary panel (right, bottom) ── -->
-    <div class="card" style="padding:0;">
-      <div class="card-header">
+    <div class="card" style="padding:0; display:flex; flex-direction:column;">
+      <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
         <div class="card-title">
-          <span class="card-title-icon">🧠</span> Speech Summary
+          <span class="card-title-icon">🧠</span> Speech & Lecture Summary
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span class="ai-badge" id="summary-ai-badge">SMART AI</span>
+          <button class="btn-icon-sm" onclick="copySummary()" title="Copy Summary">📋 Copy</button>
+          <button class="btn-icon-sm" onclick="speakSummary()" title="Read Summary Aloud">🔊 Read</button>
         </div>
       </div>
-      <div class="card-body">
-        <div class="info-text" id="summary-text">Summary will appear here…</div>
+      <div class="card-body" style="flex:1;">
+        <div class="info-text summary-box" id="summary-text">Summary will appear here as speech is detected…</div>
       </div>
     </div>
 
@@ -648,7 +905,7 @@ async function pollSentence() {
     // AI sentence
     const aiEl = document.getElementById('ai-sentence');
     if (isCorrecting) {
-      aiEl.textContent = '✨ Correcting with Gemini AI…';
+      aiEl.textContent = '✨ Correcting with SMART AI AI…';
       aiEl.classList.add('correcting');
     } else {
       aiEl.classList.remove('correcting');
@@ -676,24 +933,263 @@ async function pollSentence() {
 }
 
 /* ════════════════════════════════════════════════════════
-   POLL SPEECH / SUMMARY / KEYWORDS (1s)
+   WEB SPEECH RECOGNITION (BROWSER MIC - REAL-TIME & ZERO-LAG)
+════════════════════════════════════════════════════════ */
+let speechRecognition   = null;
+let isUserMicActive     = true;
+let isRecognizing       = false;
+let speechRestartTimer  = null;
+let lastServerSpeech    = '';
+let speechHistory       = [];
+
+function initSpeechEngine() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const pill = document.getElementById('mic-status-pill');
+  const pillText = document.getElementById('mic-status-text');
+  const btnIcon = document.getElementById('mic-btn-icon');
+  const soundWave = document.getElementById('sound-wave');
+
+  if (!SpeechRec) {
+    console.warn("Web Speech API not supported in this browser. Falling back to server-side microphone.");
+    if (pill) { pill.className = 'mic-pill'; pillText.textContent = 'Server Mic'; }
+    return;
+  }
+
+  try {
+    speechRecognition = new SpeechRec();
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = true;
+    speechRecognition.lang = 'en-US';
+    speechRecognition.maxAlternatives = 1;
+
+    speechRecognition.onstart = () => {
+      isRecognizing = true;
+      if (pill) { pill.className = 'mic-pill active'; pillText.textContent = 'Listening'; }
+      if (btnIcon) btnIcon.textContent = '🎙️';
+      if (soundWave) soundWave.classList.add('speaking');
+    };
+
+    speechRecognition.onresult = (event) => {
+      let interim = '';
+      let finalPhrase = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalPhrase += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+
+      const interimEl = document.getElementById('speech-interim');
+      if (interimEl) {
+        interimEl.textContent = interim ? `“${interim.trim()}…”` : '';
+      }
+
+      if (interim || finalPhrase) {
+        if (soundWave) soundWave.classList.add('speaking');
+      }
+
+      if (finalPhrase.trim()) {
+        const text = finalPhrase.trim();
+        document.getElementById('speech-text').textContent = text;
+        if (interimEl) interimEl.textContent = '';
+        addSpeechHistoryItem(text);
+
+        // Send to backend for SMART AI AI summarization and state sync
+        fetch('/update_speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, source: 'browser_mic' })
+        }).catch(() => {});
+      }
+    };
+
+    speechRecognition.onerror = (event) => {
+      console.log("[SpeechRecognition Error]", event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        isUserMicActive = false;
+        if (pill) { pill.className = 'mic-pill paused'; pillText.textContent = 'Permission Denied'; }
+        if (btnIcon) btnIcon.textContent = '🔇';
+        showToast('⚠️ Microphone access blocked. Please allow mic in browser settings.');
+      }
+    };
+
+    speechRecognition.onend = () => {
+      isRecognizing = false;
+      if (soundWave) soundWave.classList.remove('speaking');
+      // If user wants microphone to stay on, auto-restart smoothly
+      if (isUserMicActive) {
+        clearTimeout(speechRestartTimer);
+        speechRestartTimer = setTimeout(() => {
+          if (isUserMicActive && !isRecognizing) {
+            try { speechRecognition.start(); } catch(e) {}
+          }
+        }, 250);
+      } else {
+        if (pill) { pill.className = 'mic-pill paused'; pillText.textContent = 'Paused'; }
+        if (btnIcon) btnIcon.textContent = '🔇';
+      }
+    };
+
+    // Auto-start listening on page load
+    try {
+      speechRecognition.start();
+    } catch(e) {
+      console.log("Speech recognition auto-start deferred:", e);
+    }
+
+  } catch(err) {
+    console.warn("Error initializing SpeechRecognition:", err);
+  }
+}
+
+function toggleMicrophone() {
+  const pill = document.getElementById('mic-status-pill');
+  const pillText = document.getElementById('mic-status-text');
+  const btnIcon = document.getElementById('mic-btn-icon');
+
+  if (!speechRecognition) {
+    showToast('ℹ️ Using server-side microphone.');
+    return;
+  }
+
+  if (isUserMicActive) {
+    isUserMicActive = false;
+    clearTimeout(speechRestartTimer);
+    try { speechRecognition.stop(); } catch(e) {}
+    if (pill) { pill.className = 'mic-pill paused'; pillText.textContent = 'Paused'; }
+    if (btnIcon) btnIcon.textContent = '🔇';
+    showToast('🔇 Microphone paused.');
+  } else {
+    isUserMicActive = true;
+    try { speechRecognition.start(); } catch(e) {}
+    if (pill) { pill.className = 'mic-pill active'; pillText.textContent = 'Listening'; }
+    if (btnIcon) btnIcon.textContent = '🎙️';
+    showToast('🎙️ Microphone active & listening.');
+  }
+}
+
+function addSpeechHistoryItem(text) {
+  if (!text || !text.trim()) return;
+  const list = document.getElementById('speech-history-list');
+  if (!list) return;
+
+  // Avoid consecutive duplicates
+  if (speechHistory.length > 0 && speechHistory[speechHistory.length - 1] === text) return;
+  speechHistory.push(text);
+  if (speechHistory.length > 8) speechHistory.shift();
+
+  renderSpeechHistory(speechHistory);
+}
+
+function renderSpeechHistory(history) {
+  const list = document.getElementById('speech-history-list');
+  if (!list) return;
+  if (!history || history.length === 0) {
+    list.innerHTML = '<span class="recent-empty">No speech recorded yet</span>';
+    return;
+  }
+  list.innerHTML = history.slice().reverse().map(item =>
+    `<div class="recent-item">${escHtml(item)}</div>`
+  ).join('');
+}
+
+async function clearSpeech() {
+  speechHistory = [];
+  renderSpeechHistory([]);
+  document.getElementById('speech-text').textContent = 'Listening for speech…';
+  const interim = document.getElementById('speech-interim');
+  if (interim) interim.textContent = '';
+  document.getElementById('summary-text').textContent = 'Summary will appear here as speech is detected…';
+  document.getElementById('keywords-wrap').innerHTML = '<span style="color:var(--text-low); font-size:.8rem;">Speak to extract keywords…</span>';
+  document.getElementById('kw-count').textContent = '0 topics';
+
+  try {
+    await fetch('/clear_speech', { method: 'POST' });
+    showToast('🧹 Speech & summary cleared.');
+  } catch(e) {}
+}
+
+function copySummary() {
+  const txt = document.getElementById('summary-text').textContent.trim();
+  if (!txt || txt.includes('Summary will appear here')) {
+    showToast('⚠️ No summary to copy yet.');
+    return;
+  }
+  navigator.clipboard.writeText(txt).then(() => {
+    showToast('📋 Summary copied to clipboard!');
+  }).catch(() => {
+    showToast('⚠️ Could not copy summary.');
+  });
+}
+
+function speakSummary() {
+  const txt = document.getElementById('summary-text').textContent.trim();
+  if (!txt || txt.includes('Summary will appear here')) {
+    showToast('⚠️ No summary available to speak.');
+    return;
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(txt);
+    u.rate = 1.0;
+    u.pitch = 1.0;
+    window.speechSynthesis.speak(u);
+    showToast('🔊 Reading summary aloud…');
+  } else {
+    showToast('⚠️ Browser speech synthesis unavailable.');
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   POLL SPEECH / SUMMARY / KEYWORDS (1.2s)
 ════════════════════════════════════════════════════════ */
 async function pollExtras() {
   try {
-    const [st, su, kw] = await Promise.all([
-      fetch('/teacher_text').then(r=>r.json()),
-      fetch('/summary').then(r=>r.json()),
-      fetch('/keywords').then(r=>r.json()),
-    ]);
-    document.getElementById('speech-text').textContent = st.text || '—';
-    document.getElementById('summary-text').textContent = su.summary || '—';
+    const r = await fetch('/teacher_text');
+    const data = await r.json();
 
+    const serverText    = data.text || '';
+    const serverHist    = data.history || [];
+    const serverSummary = data.summary || '';
+    const serverKw      = data.keywords || [];
+    const isSum         = data.is_summarizing || false;
+
+    // Sync speech text if browser didn't already display it
+    const speechEl = document.getElementById('speech-text');
+    if (serverText && serverText !== 'Listening...' && serverText !== lastServerSpeech) {
+      lastServerSpeech = serverText;
+      if (!isRecognizing || speechEl.textContent === 'Listening for speech…') {
+        speechEl.textContent = serverText;
+      }
+    }
+
+    // Sync history if larger
+    if (serverHist.length > speechHistory.length) {
+      speechHistory = serverHist;
+      renderSpeechHistory(speechHistory);
+    }
+
+    // Sync summary
+    const sumEl = document.getElementById('summary-text');
+    if (isSum) {
+      sumEl.innerHTML = '<span style="color:var(--accent1); font-style:italic;">✨ SMART AI is analyzing and summarizing speech…</span>';
+    } else if (serverSummary) {
+      sumEl.textContent = serverSummary;
+    }
+
+    // Sync keywords
     const kwWrap = document.getElementById('keywords-wrap');
-    if (kw.keywords && kw.keywords.length > 0) {
-      kwWrap.innerHTML = kw.keywords.map(
+    const kwCount = document.getElementById('kw-count');
+    if (serverKw && serverKw.length > 0) {
+      if (kwCount) kwCount.textContent = `${serverKw.length} topic${serverKw.length > 1 ? 's' : ''}`;
+      kwWrap.innerHTML = serverKw.map(
         k => `<span class="kw-tag">${escHtml(k)}</span>`
       ).join('');
     }
+
   } catch(e) {}
 }
 
@@ -746,7 +1242,7 @@ async function correctWithAI() {
     const r = await fetch('/ai_correct', {method:'POST'});
     const d = await r.json();
     if (d.status === 'started') {
-      showToast('✨ Gemini is correcting your sentence…');
+      showToast('✨ SMART AI is correcting your sentence…');
     } else if (d.status === 'error') {
       showToast('⚠ ' + (d.message || 'Error'));
     }
@@ -815,6 +1311,14 @@ function escHtml(s) {
 pollGesture();
 pollSentence();
 pollExtras();
+initSpeechEngine();
+
+// Ensure audio context or speech starts if browser requires user click
+document.addEventListener('click', () => {
+  if (isUserMicActive && (!speechRecognition || !isRecognizing)) {
+    try { speechRecognition && speechRecognition.start(); } catch(e) {}
+  }
+}, { once: true });
 
 setInterval(pollGesture,   200);
 setInterval(pollSentence,  300);

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduVision AI · Multimodal Sign & Voice Classroom Assistant</title>
+  <link rel="stylesheet" href="/static/main.css">
+  <style>
+    /* ── Hero Section ───────────────────────────────────── */
+    .hero-section {
+      text-align: center;
+      padding: 40px 20px 60px;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.10);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent1);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.20);
+    }
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-mid);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+    .hero-cta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Quick Stats Grid ──────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s;
+    }
+    .stat-card:hover {
+      border-color: var(--border-hi);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .stat-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-xs);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    .stat-meta .stat-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-hi);
+    }
+    .stat-meta .stat-lbl {
+      font-size: 0.74rem;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Feature Cards Grid ────────────────────────────── */
+    .section-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .section-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-mid);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 50px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      border-color: var(--border-hi);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), var(--glow-cyan);
+    }
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+    .feature-top {
+      margin-bottom: 20px;
+    }
+    .feature-icon-badge {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+    }
+    .feature-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-hi);
+    }
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
+    .feature-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 16px 0 20px;
+    }
+    .feature-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-mid);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .feature-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent1);
+      transition: gap 0.2s;
+    }
+    .feature-card:hover .feature-link-btn {
+      gap: 10px;
+      color: #fff;
+    }
+
+    /* ── How It Works Strip ────────────────────────────── */
+    .how-it-works {
+      background: rgba(12, 22, 48, 0.5);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent1);
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .step-desc {
+      font-size: 0.84rem;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION HEADER ════════════════════════════════ -->
+  <header class="app-header">
+    <a href="/" class="brand-link">
+      <div class="brand-logo-icon">🤟</div>
+      <div class="brand-text">EduVision<span class="brand-ai">AI</span></div>
+      <span class="brand-badge">Suite</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link active">
+        <span class="nav-link-icon">🏠</span> Home
+      </a>
+      <a href="/translate" class="nav-link">
+        <span class="nav-link-icon">🤟</span> Sign Studio
+      </a>
+      <a href="/lecture" class="nav-link">
+        <span class="nav-link-icon">🎤</span> Speech & Notes
+      </a>
+      <a href="/dictionary" class="nav-link">
+        <span class="nav-link-icon">📚</span> Sign Library
+      </a>
+      <a href="/system" class="nav-link">
+        <span class="nav-link-icon">⚙️</span> System
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span>Online · Port 5000</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN CONTENT WRAPPER ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-badge">
+        <span>⚡ ADVANCED NEURAL AI · TENSORFLOW ZERO-LAG PIPELINE</span>
+      </div>
+      <h1 class="hero-title">
+        Next-Generation <span class="gradient-text">Sign Gesture & Voice</span> Classroom Assistant
+      </h1>
+      <p class="hero-desc">
+        Empowering inclusive education with real-time ASL sign gesture recognition, natural language sentence reconstruction with Neural AI, and zero-latency lecture voice transcription.
+      </p>
+      <div class="hero-cta">
+        <a href="/translate" class="btn btn-primary btn-lg">
+          <span>🚀 Launch Sign Studio</span>
+        </a>
+        <a href="/lecture" class="btn btn-ghost btn-lg">
+          <span>🎙️ Open Speech Hub</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Quick Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="color:var(--accent1)">✋</div>
+        <div class="stat-meta">
+          <div class="stat-val">9 Vocabularies</div>
+          <div class="stat-lbl">ASL Gesture Model</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="color:var(--accent-pink)">✨</div>
+        <div class="stat-meta">
+          <div class="stat-val">ADVANCED NEURAL AI</div>
+          <div class="stat-lbl">AI Sentence Polisher</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="color:var(--accent3)">🎤</div>
+        <div class="stat-meta">
+          <div class="stat-val">Web Speech API</div>
+          <div class="stat-lbl">Live Voice Recognition</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="color:var(--accent4)">🔊</div>
+        <div class="stat-meta">
+          <div class="stat-val">Pyttsx3 & Synth</div>
+          <div class="stat-lbl">Offline Voice Playback</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Launch Cards -->
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Explore Dedicated Features</h2>
+        <p class="section-subtitle">Select a tool to launch its focused, full-screen workspace</p>
+      </div>
+    </div>
+
+    <div class="features-grid">
+
+      <!-- Card 1: Sign Studio -->
+      <a href="/translate" class="feature-card">
+        <div class="feature-top">
+          <div class="feature-icon-badge" style="background:rgba(56,189,248,0.12); color:var(--accent1);">
+            🤟
+          </div>
+          <h3 class="feature-title">Live Sign Language Studio</h3>
+          <p class="feature-desc">
+            Translate American Sign Language hand signs into text in real time using your webcam. MediaPipe tracks 42 hand landmarks with zero latency.
+          </p>
+          <div class="feature-tags">
+            <span class="feature-tag">Webcam Tracking</span>
+            <span class="feature-tag">Confidence Meter</span>
+            <span class="feature-tag">Smart Grammar</span>
+          </div>
+        </div>
+        <div class="feature-link-btn">
+          <span>Open Sign Studio</span> <span>→</span>
+        </div>
+      </a>
+
+      <!-- Card 2: Lecture & Speech -->
+      <a href="/lecture" class="feature-card">
+        <div class="feature-top">
+          <div class="feature-icon-badge" style="background:rgba(52,211,153,0.12); color:var(--accent3);">
+            🎤
+          </div>
+          <h3 class="feature-title">Smart Speech & Lecture Hub</h3>
+          <p class="feature-desc">
+            Continuous microphone listening with streaming interim transcription, automated AI educational synopsis, and topic keyword extraction.
+          </p>
+          <div class="feature-tags">
+            <span class="feature-tag">Live Voice Wave</span>
+            <span class="feature-tag">AI Summary</span>
+            <span class="feature-tag">Export Notes</span>
+          </div>
+        </div>
+        <div class="feature-link-btn">
+          <span>Open Speech Hub</span> <span>→</span>
+        </div>
+      </a>
+
+      <!-- Card 3: Sign Library -->
+      <a href="/dictionary" class="feature-card">
+        <div class="feature-top">
+          <div class="feature-icon-badge" style="background:rgba(251,146,60,0.12); color:var(--accent4);">
+            📚
+          </div>
+          <h3 class="feature-title">Sign Language Library</h3>
+          <p class="feature-desc">
+            Interactive guide to all 9 supported signs. Review finger positions, palm orientations, and common classroom usage tips.
+          </p>
+          <div class="feature-tags">
+            <span class="feature-tag">9 Gestures</span>
+            <span class="feature-tag">Step-by-step</span>
+            <span class="feature-tag">Practice Tips</span>
+          </div>
+        </div>
+        <div class="feature-link-btn">
+          <span>Explore Dictionary</span> <span>→</span>
+        </div>
+      </a>
+
+      <!-- Card 4: System Diagnostics -->
+      <a href="/system" class="feature-card">
+        <div class="feature-top">
+          <div class="feature-icon-badge" style="background:rgba(129,140,248,0.12); color:var(--accent2);">
+            ⚙️
+          </div>
+          <h3 class="feature-title">System & Diagnostics</h3>
+          <p class="feature-desc">
+            Verify AI model status, test Cloud AI API latency, test offline and browser speech synthesizers, and view hardware telemetry.
+          </p>
+          <div class="feature-tags">
+            <span class="feature-tag">Latency Test</span>
+            <span class="feature-tag">Audio Engine</span>
+            <span class="feature-tag">TF JIT Status</span>
+          </div>
+        </div>
+        <div class="feature-link-btn">
+          <span>Open Diagnostics</span> <span>→</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- How It Works Infographic -->
+    <div class="section-header" style="margin-top:20px;">
+      <div>
+        <h2 class="section-title">How EduVision AI Works</h2>
+        <p class="section-subtitle">High-throughput pipeline orchestrated across client and server</p>
+      </div>
+    </div>
+
+    <div class="how-it-works">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-title">Hand Landmark Extraction</div>
+        <div class="step-desc">MediaPipe extracts 21 3D coordinates per hand at full camera FPS in an isolated thread.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-title">Compiled Neural Inference</div>
+        <div class="step-desc">A JIT-compiled TensorFlow graph evaluates normalized coordinates in ~3ms without Python GIL overhead.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-title">Neural Language Intelligence</div>
+        <div class="step-desc">Raw sign keywords are transformed into fluent, grammatically natural sentences with ADVANCED NEURAL AI.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-title">Speech-to-Text & TTS</div>
+        <div class="step-desc">Instant offline vocalization via pyttsx3 paired with client Web Speech recognition and summaries.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <div class="footer-brand">EduVision AI · Multimodal Classroom Assistant</div>
+    <div class="kbd-hint">
+      <span><kbd>/</kbd> Home</span>
+      <span><kbd>/translate</kbd> Sign Studio</span>
+      <span><kbd>/lecture</kbd> Speech</span>
+      <span><kbd>/dictionary</kbd> Library</span>
+    </div>
+  </footer>
+
+</body>
+</html>

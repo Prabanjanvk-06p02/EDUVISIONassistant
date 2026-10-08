@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, jsonify
+from flask import Flask, render_template, Response, jsonify, request
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -26,16 +26,22 @@ except ImportError:
 app = Flask(__name__)
 
 # ─────────────────────────────────────────────────────────
-# GEMINI CONFIG
+# CLOUD AI CONFIG
 # ─────────────────────────────────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.env")))
+except Exception:
+    pass
+
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 _genai_instance = None
 if genai_client and GEMINI_API_KEY:
     try:
         _genai_instance = genai_client.Client(api_key=GEMINI_API_KEY)
-        print("[OK] Gemini API configured")
+        print("[OK] Cloud AI API configured")
     except Exception as _ge:
-        print(f"[WARN] Gemini config error: {_ge}")
+        print(f"[WARN] Cloud AI config error: {_ge}")
 
 # ─────────────────────────────────────────────────────────
 # MODEL — compiled @tf.function for zero-overhead inference
@@ -176,11 +182,13 @@ stable_frame_cnt   = 0
 corrected_sentence = ""
 is_correcting      = False
 
-teacher_text = "Listening..."
-speech_buf   = []
-summary_text = ""
-keywords     = []
-text_lock    = threading.Lock()
+teacher_text   = "Listening..."
+speech_buf     = []
+summary_text   = ""
+keywords       = []
+is_summarizing = False
+speech_source  = "idle"
+text_lock      = threading.Lock()
 
 speech_queue = queue.Queue(maxsize=2)
 last_spoken  = None
@@ -218,40 +226,126 @@ threading.Thread(target=_tts_worker, daemon=True).start()
 # ─────────────────────────────────────────────────────────
 # SPEECH-TO-TEXT
 # ─────────────────────────────────────────────────────────
+def _generate_summary_and_keywords(full_text: str):
+    global summary_text, keywords, is_summarizing
+    if not full_text or not full_text.strip():
+        with text_lock:
+            is_summarizing = False
+        return
+
+    # Instant fast fallback update first
+    words_list = re.findall(r'[a-zA-Z]{3,}', full_text.lower())
+    stop = {"the","is","am","are","was","were","i","you","a","an","and",
+            "to","in","on","for","of","it","this","we","he","she","they",
+            "that","with","have","has","had","will","can","not","from"}
+    quick_kw = list(dict.fromkeys(w for w in words_list if w not in stop))[:8]
+    sents = [s.strip() for s in re.split(r'[.!?]', full_text) if s.strip()]
+    quick_summary = ". ".join(sents[-2:]) + ("." if sents and not sents[-1].endswith(".") else "")
+
+    with text_lock:
+        if not summary_text:
+            summary_text = quick_summary
+        if not keywords:
+            keywords = quick_kw
+
+    # If Cloud AI is available, generate smart educational summary & keywords
+    if _genai_instance:
+        try:
+            prompt = (
+                "You are an educational AI assistant analyzing speech from a classroom or meeting.\n"
+                f"Transcript:\n\"{full_text}\"\n\n"
+                "Provide:\n"
+                "1. A concise 1-2 sentence educational summary of key points.\n"
+                "2. 4 to 8 key concepts or keywords separated by commas.\n\n"
+                "Strictly format your response as:\n"
+                "SUMMARY: <summary here>\n"
+                "KEYWORDS: <keyword1, keyword2, keyword3, ...>"
+            )
+            response = _genai_instance.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=prompt
+            )
+            out = response.text.strip()
+            sum_m = re.search(r'SUMMARY:\s*(.*?)(?=\nKEYWORDS:|\Z)', out, re.DOTALL | re.IGNORECASE)
+            kw_m  = re.search(r'KEYWORDS:\s*(.*)', out, re.IGNORECASE)
+
+            new_sum = sum_m.group(1).strip() if sum_m else ""
+            new_kw_str = kw_m.group(1).strip() if kw_m else ""
+            new_kw = [k.strip().lower() for k in new_kw_str.split(',') if k.strip() and len(k.strip()) > 1][:8]
+
+            with text_lock:
+                if new_sum:
+                    summary_text = new_sum
+                if new_kw:
+                    keywords = new_kw
+        except Exception as _ge:
+            print(f"[Speech AI Info] {_ge}")
+
+    with text_lock:
+        is_summarizing = False
+
+
+def _process_speech_text(text: str, source: str = "web"):
+    global teacher_text, speech_buf, speech_source, is_summarizing
+    cleaned = text.strip()
+    if not cleaned:
+        return
+    with text_lock:
+        teacher_text = cleaned
+        speech_source = source
+        if not speech_buf or speech_buf[-1] != cleaned:
+            speech_buf.append(cleaned)
+            if len(speech_buf) > 10:
+                speech_buf.pop(0)
+        full_text = " ".join(speech_buf)
+        is_summarizing = True
+
+    threading.Thread(target=_generate_summary_and_keywords, args=(full_text,), daemon=True).start()
+
+
 def _speech_to_text():
-    global teacher_text, speech_buf, summary_text, keywords
     r = sr.Recognizer()
     r.dynamic_energy_threshold = True
-    r.pause_threshold = 1.2
-    mic = sr.Microphone()
-    with mic as src:
-        r.adjust_for_ambient_noise(src, duration=1)
+    r.pause_threshold = 0.8
+    r.non_speaking_duration = 0.5
+    mic = None
+
+    try:
+        mic = sr.Microphone()
+        with mic as src:
+            r.adjust_for_ambient_noise(src, duration=0.8)
+    except Exception as e:
+        print(f"[Server Mic Init Info] {e}")
+
     while True:
+        if mic is None:
+            time.sleep(3)
+            try:
+                mic = sr.Microphone()
+                with mic as src:
+                    r.adjust_for_ambient_noise(src, duration=0.8)
+            except Exception:
+                continue
+
         try:
             with mic as src:
-                audio = r.listen(src)
+                audio = r.listen(src, timeout=3.0, phrase_time_limit=8.0)
             text = r.recognize_google(audio)
-            if text.strip():
-                with text_lock:
-                    teacher_text = text
-                    speech_buf.append(text)
-                    if len(speech_buf) > 5:
-                        speech_buf.pop(0)
-                    full  = " ".join(speech_buf)
-                    sents = re.split(r'[.!?]', full)
-                    sents = [s.strip() for s in sents if s.strip()]
-                    summary_text = " ".join(sents[-2:])
-                    stop = {"the","is","am","are","i","you","a","an","and",
-                            "to","in","on","for","of","it","this","we","he","she"}
-                    raw_w    = re.findall(r'\w+', full.lower())
-                    keywords = list(set(w for w in raw_w if w not in stop and len(w) > 2))[:10]
-        except Exception:
+            if text and text.strip():
+                print(f"[Server Mic Detected] {text}")
+                _process_speech_text(text, source="server")
+        except sr.WaitTimeoutError:
+            continue
+        except (sr.UnknownValueError, sr.RequestError):
+            continue
+        except Exception as e:
+            time.sleep(1.0)
             continue
 
 threading.Thread(target=_speech_to_text, daemon=True).start()
 
 # ─────────────────────────────────────────────────────────
-# GEMINI GRAMMAR CORRECTION
+# NEURAL GRAMMAR CORRECTION
 # ─────────────────────────────────────────────────────────
 def _simple_sentence(words: list[str]) -> str:
     """Rule-based fallback: builds a readable sentence without AI."""
@@ -282,9 +376,9 @@ def _correct_grammar(raw: str, words: list[str]):
         )
         result = response.text.strip()
         corrected_sentence = result if result else _simple_sentence(words)
-        print(f"[Gemini] {raw} -> {corrected_sentence}")
+        print(f"[AI] {raw} -> {corrected_sentence}")
     except Exception as e:
-        print(f"[Gemini ERROR] {e}")
+        print(f"[AI ERROR] {e}")
         # Fallback to simple rule-based sentence
         corrected_sentence = _simple_sentence(words)
     is_correcting = False
@@ -482,7 +576,24 @@ def generate_frames():
 # ─────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("home.html")
+
+@app.route("/translate")
+@app.route("/studio")
+def translate():
+    return render_template("translate.html")
+
+@app.route("/lecture")
+def lecture():
+    return render_template("lecture.html")
+
+@app.route("/dictionary")
+def dictionary():
+    return render_template("dictionary.html")
+
+@app.route("/system")
+def system():
+    return render_template("system.html")
 
 @app.route("/video")
 def video():
@@ -564,15 +675,55 @@ def backspace_sentence():
 @app.route("/teacher_text")
 def teacher():
     with text_lock:
-        return jsonify({"text": teacher_text})
+        return jsonify({
+            "text": teacher_text,
+            "history": list(speech_buf),
+            "summary": summary_text,
+            "keywords": list(keywords),
+            "is_summarizing": is_summarizing,
+            "source": speech_source
+        })
+
+@app.route("/update_speech", methods=["POST"])
+def update_speech():
+    data = request.get_json(silent=True) or {}
+    text = str(data.get("text", "")).strip()
+    source = str(data.get("source", "browser")).strip()
+    if text:
+        _process_speech_text(text, source=source)
+    with text_lock:
+        return jsonify({
+            "status": "ok",
+            "text": teacher_text,
+            "history": list(speech_buf),
+            "summary": summary_text,
+            "keywords": list(keywords),
+            "is_summarizing": is_summarizing
+        })
+
+@app.route("/clear_speech", methods=["POST"])
+def clear_speech():
+    global teacher_text, speech_buf, summary_text, keywords, is_summarizing
+    with text_lock:
+        teacher_text   = "Listening..."
+        speech_buf     = []
+        summary_text   = ""
+        keywords       = []
+        is_summarizing = False
+    return jsonify({"status": "ok", "message": "Speech cleared"})
 
 @app.route("/summary")
 def summary():
-    return jsonify({"summary": summary_text})
+    with text_lock:
+        return jsonify({
+            "summary": summary_text,
+            "is_summarizing": is_summarizing
+        })
 
 @app.route("/keywords")
 def get_keywords():
-    return jsonify({"keywords": keywords})
+    with text_lock:
+        return jsonify({"keywords": list(keywords)})
 
 # ─────────────────────────────────────────────────────────
 # RUN
@@ -580,6 +731,6 @@ def get_keywords():
 if __name__ == "__main__":
     print("[START] Gesture Voice AI - Zero-lag pipeline")
     print(f"  Model  : {len(class_names)} classes")
-    print(f"  Gemini : {GENAI_AVAILABLE and bool(GEMINI_API_KEY)}")
+    print(f"  Cloud AI : {GENAI_AVAILABLE and bool(GEMINI_API_KEY)}")
     print(f"  Thread : Camera + Gesture processing separated")
     app.run(debug=False, use_reloader=False, threaded=True)

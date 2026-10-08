@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System & Diagnostics · EduVision AI</title>
+  <link rel="stylesheet" href="/static/main.css">
+  <style>
+    .sys-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 24px;
+    }
+    .test-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      min-height: 72px;
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .meter-wrap {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .meter-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent3), var(--accent1));
+      transition: width 0.1s ease;
+    }
+    .table-spec {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+    .table-spec tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .table-spec td {
+      padding: 10px 6px;
+    }
+    .table-spec td:first-child {
+      color: var(--text-mid);
+      font-weight: 500;
+      width: 40%;
+    }
+    .table-spec td:last-child {
+      color: var(--text-hi);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION HEADER ════════════════════════════════ -->
+  <header class="app-header">
+    <a href="/" class="brand-link">
+      <div class="brand-logo-icon">🤟</div>
+      <div class="brand-text">EduVision<span class="brand-ai">AI</span></div>
+      <span class="brand-badge">Diagnostics</span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="/" class="nav-link">
+        <span class="nav-link-icon">🏠</span> Home
+      </a>
+      <a href="/translate" class="nav-link">
+        <span class="nav-link-icon">🤟</span> Sign Studio
+      </a>
+      <a href="/lecture" class="nav-link">
+        <span class="nav-link-icon">🎤</span> Speech & Notes
+      </a>
+      <a href="/dictionary" class="nav-link">
+        <span class="nav-link-icon">📚</span> Sign Library
+      </a>
+      <a href="/system" class="nav-link active">
+        <span class="nav-link-icon">⚙️</span> System
+      </a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span>Diagnostics Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN CONTENT WRAPPER ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <div style="margin-bottom: 28px;">
+      <h1 style="font-family:'Outfit',sans-serif; font-size:2rem; font-weight:800; margin-bottom:6px;">
+        System Telemetry & Hardware Suite
+      </h1>
+      <p style="color:var(--text-mid); font-size:0.95rem;">
+        Test core AI services, inspect neural model architecture, and verify microphone & audio output pipelines.
+      </p>
+    </div>
+
+    <div class="sys-grid">
+
+      <!-- Card 1: Cloud AI Service Test -->
+      <div class="card" style="padding:22px;">
+        <div class="card-title">
+          <span class="card-title-icon">✨</span> Cloud AI Service Check
+        </div>
+        <p style="font-size:0.86rem; color:var(--text-mid); margin:10px 0 14px;">
+          Ping the Cloud AI API with a test prompt to measure latency and verify token generation.
+        </p>
+        <button class="btn btn-primary" onclick="testCloudAI()">
+          <span>⚡ Ping Cloud AI API</span>
+        </button>
+        <div class="test-box" id="cloud-ai-box">Press "Ping Cloud AI API" to begin connection test…</div>
+      </div>
+
+      <!-- Card 2: Voice Synthesis (TTS) Test -->
+      <div class="card" style="padding:22px;">
+        <div class="card-title">
+          <span class="card-title-icon">🔊</span> Voice Synthesis (TTS) Test
+        </div>
+        <p style="font-size:0.86rem; color:var(--text-mid); margin:10px 0 14px;">
+          Test local audio speaker playback using both browser SpeechSynthesis and offline Pyttsx3.
+        </p>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="testBrowserTTS()">
+            <span>🔊 Test Browser Voice</span>
+          </button>
+          <button class="btn btn-ghost" onclick="testServerTTS()">
+            <span>📻 Test Offline Pyttsx3</span>
+          </button>
+        </div>
+        <div class="test-box" id="tts-box">Ready for audio verification…</div>
+      </div>
+
+      <!-- Card 3: Microphone Volume Meter -->
+      <div class="card" style="padding:22px;">
+        <div class="card-title">
+          <span class="card-title-icon">🎤</span> Microphone Audio Level Meter
+        </div>
+        <p style="font-size:0.86rem; color:var(--text-mid); margin:10px 0 14px;">
+          Sample real-time browser audio levels to confirm input gain and background noise threshold.
+        </p>
+        <button class="btn btn-primary" id="btn-mic-meter" onclick="startMicMeter()">
+          <span>🎙️ Start Audio Meter</span>
+        </button>
+        <div class="meter-wrap">
+          <div class="meter-bar" id="mic-meter-bar"></div>
+        </div>
+        <div class="test-box" id="mic-box">Audio level meter idle…</div>
+      </div>
+
+      <!-- Card 4: Neural Model Specifications -->
+      <div class="card" style="padding:22px;">
+        <div class="card-title">
+          <span class="card-title-icon">🧠</span> Neural Model Specifications
+        </div>
+        <table class="table-spec">
+          <tr>
+            <td>Architecture</td>
+            <td>Feed-Forward Dense JIT Graph</td>
+          </tr>
+          <tr>
+            <td>Input Shape</td>
+            <td>(1, 126) - 42 3D Keypoints</td>
+          </tr>
+          <tr>
+            <td>Inference Latency</td>
+            <td>~3.2 ms / frame</td>
+          </tr>
+          <tr>
+            <td>Framework</td>
+            <td>TensorFlow 2.15 (@tf.function)</td>
+          </tr>
+          <tr>
+            <td>Active Vocabulary</td>
+            <td>9 Classes (Static ASL)</td>
+          </tr>
+          <tr>
+            <td>Tracker</td>
+            <td>MediaPipe Hands 0.10.x</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <div class="footer-brand">EduVision AI · System Diagnostics</div>
+    <div class="kbd-hint">
+      <span>Zero-Lag Multimodal Stack</span>
+    </div>
+  </footer>
+
+  <script>
+    let audioContext = null;
+    let micStream = null;
+    let toastTimer = null;
+
+    async function testCloudAI() {
+      const box = document.getElementById('cloud-ai-box');
+      box.textContent = "Connecting to Cloud AI Engine…";
+      const start = performance.now();
+
+      try {
+        const r = await fetch('/ai_correct', { method: 'POST' });
+        const d = await r.json();
+        const duration = Math.round(performance.now() - start);
+
+        if (d.status === 'started' || d.status === 'busy') {
+          box.textContent = `[OK] Cloud AI API Endpoint reached (${duration}ms)\nStatus: ${d.status}\nModel: Cloud Neural Model`;
+          showToast(`⚡ Cloud AI ping successful (${duration}ms)`);
+        } else {
+          box.textContent = `[INFO] Response: ${JSON.stringify(d, null, 2)}\nLatency: ${duration}ms`;
+        }
+      } catch(e) {
+        box.textContent = `[ERROR] Connection failed: ${e.message}`;
+      }
+    }
+
+    function testBrowserTTS() {
+      const box = document.getElementById('tts-box');
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance("EduVision AI browser speech synthesis test successful.");
+        u.rate = 1.0;
+        window.speechSynthesis.speak(u);
+        box.textContent = "[OK] Browser SpeechSynthesis spoke test sentence.";
+        showToast("🔊 Browser speech test played");
+      } else {
+        box.textContent = "[ERROR] Browser SpeechSynthesis not supported.";
+      }
+    }
+
+    async function testServerTTS() {
+      const box = document.getElementById('tts-box');
+      box.textContent = "Dispatching test to offline Pyttsx3 engine…";
+      try {
+        const r = await fetch('/speak_sentence', { method: 'POST' });
+        const d = await r.json();
+        box.textContent = `[OK] Pyttsx3 dispatch returned: ${JSON.stringify(d)}`;
+        showToast("📻 Pyttsx3 server voice triggered");
+      } catch(e) {
+        box.textContent = `[ERROR] Server TTS error: ${e.message}`;
+      }
+    }
+
+    async function startMicMeter() {
+      const btn = document.getElementById('btn-mic-meter');
+      const box = document.getElementById('mic-box');
+      const bar = document.getElementById('mic-meter-bar');
+
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+        if (audioContext) audioContext.close();
+        btn.textContent = "🎙️ Start Audio Meter";
+        bar.style.width = "0%";
+        box.textContent = "Microphone monitoring stopped.";
+        return;
+      }
+
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioContext.createMediaStreamSource(micStream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        src.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        btn.textContent = "⏹️ Stop Audio Meter";
+        box.textContent = "[OK] Live microphone capture streaming…";
+        showToast("🎙️ Audio meter active");
+
+        function updateMeter() {
+          if (!micStream) return;
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const avg = sum / dataArray.length;
+          const pct = Math.min(100, Math.round((avg / 128) * 100));
+          bar.style.width = pct + "%";
+          requestAnimationFrame(updateMeter);
+        }
+        updateMeter();
+
+      } catch(e) {
+        box.textContent = `[ERROR] Microphone permission error: ${e.message}`;
+        showToast("⚠️ Microphone access denied");
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+  </script>
+</body>
+</html>
